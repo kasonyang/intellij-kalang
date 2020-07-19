@@ -1,0 +1,28 @@
+<idea-plugin>
+    <id>site.kason.intellij-kalang</id>
+    <name>Kalang support</name>
+    <vendor email="me@kason.site" url="http://www.kason.site">Kason Yang</vendor>
+
+    <description><![CDATA[
+        <p>Languange support for kalang.</p>
+        <p>More information please visit: http://kalang.kason.site</p>
+    ]]></description>
+
+    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+         on how to target different products -->
+    <!-- uncomment to enable plugin in all products
+    <depends>com.intellij.modules.lang</depends>
+    -->
+
+    <extensions defaultExtensionNs="com.intellij">
+        <fileTypeFactory implementation="site.kason.intellij.KalangFileTypeFactory" />
+        <lang.parserDefinition language="Kalang" implementationClass="site.kason.intellij.KalangIdeaParserDefinition" />
+        <lang.syntaxHighlighterFactory language="Kalang" implementationClass="site.kason.intellij.highlighter.KalangSyntaxHighlighterFactory" />
+        <completion.contributor language="Kalang" implementationClass="site.kason.intellij.completion.KalangCompletionContributor" />
+        <externalAnnotator language="Kalang" implementationClass="site.kason.intellij.KalangExternalAnnotator"/>
+    </extensions>
+
+    <actions>
+        <!-- Add your actions here -->
+    </actions>
+</idea-plugin>
