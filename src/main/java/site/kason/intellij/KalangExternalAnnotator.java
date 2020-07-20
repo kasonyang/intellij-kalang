@@ -4,7 +4,9 @@ import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.ExternalAnnotator;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
-import kalang.compiler.compile.*;
+import kalang.compiler.compile.CompilePhase;
+import kalang.compiler.compile.Diagnosis;
+import kalang.compiler.compile.OffsetRange;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import site.kason.kalang.sdk.compiler.ExtendKalangCompiler;
@@ -30,7 +32,7 @@ public class KalangExternalAnnotator extends ExternalAnnotator<PsiFile, List<Dia
         //TODO fix className
         String fileName = collectedInfo.getVirtualFile().getName();
         String className = collectedInfo.getName();
-        ExtendKalangCompiler compiler = new ExtendKalangCompiler();
+        ExtendKalangCompiler compiler = CompilerManager.create(collectedInfo.getProject(), collectedInfo.getVirtualFile());
         List<Diagnosis> diagnosisList = new LinkedList<>();
         compiler.setDiagnosisHandler(diagnosisList::add);
         compiler.addSource(className, text, fileName);

@@ -2,6 +2,7 @@ package site.kason.intellij.completion;
 
 import com.intellij.codeInsight.completion.*;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ProcessingContext;
 import kalang.compiler.compile.CompilationUnit;
@@ -11,6 +12,7 @@ import kalang.compiler.core.MethodDescriptor;
 import kalang.compiler.core.ParameterDescriptor;
 import kalang.compiler.util.NameUtil;
 import org.jetbrains.annotations.NotNull;
+import site.kason.intellij.CompilerManager;
 import site.kason.kalang.sdk.compiler.ExtendKalangCompiler;
 import site.kason.kalang.sdk.compiler.complete.Completion;
 import site.kason.kalang.sdk.compiler.complete.FieldCompletion;
@@ -34,12 +36,13 @@ public class KalangCompletionContributor extends CompletionContributor {
 
         @Override
         protected void addCompletions(@NotNull CompletionParameters parameters, @NotNull ProcessingContext context, @NotNull CompletionResultSet result) {
+            @NotNull Project project = parameters.getOriginalFile().getProject();
             VirtualFile file = parameters.getOriginalFile().getVirtualFile();
             String text = parameters.getOriginalFile().getText();
             String fileName = parameters.getOriginalFile().getName();
             //TODO fix className
             String className = file.getNameWithoutExtension();
-            ExtendKalangCompiler compiler = new ExtendKalangCompiler();
+            ExtendKalangCompiler compiler = CompilerManager.create(project, file);
             compiler.addSource(className, text, fileName);
             compiler.compile(CompilePhase.PHASE_BUILDAST);
             CompilationUnit cu = compiler.getCompilationUnit(className);

@@ -24,5 +24,10 @@
 
     <actions>
         <!-- Add your actions here -->
+        <action id="site.kason.intellij.action.SyncShellOptionsAction"
+                class="site.kason.intellij.action.SyncShellOptionsAction" text="SyncShellOptions"
+                description="sync shell options">
+            <add-to-group group-id="ToolsMenu" anchor="first"/>
+        </action>
     </actions>
 </idea-plugin>
