@@ -1,7 +1,11 @@
 package site.kason.intellij.completion;
 
 import com.intellij.codeInsight.completion.*;
+import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
+import com.intellij.openapi.editor.CaretModel;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ProcessingContext;
@@ -10,6 +14,7 @@ import kalang.compiler.compile.CompilePhase;
 import kalang.compiler.core.FieldDescriptor;
 import kalang.compiler.core.MethodDescriptor;
 import kalang.compiler.core.ParameterDescriptor;
+import kalang.compiler.core.Type;
 import kalang.compiler.util.NameUtil;
 import org.jetbrains.annotations.NotNull;
 import site.kason.intellij.CompilerManager;
@@ -56,12 +61,15 @@ public class KalangCompletionContributor extends CompletionContributor {
                 if (it instanceof MethodCompletion) {
                     MethodDescriptor method = ((MethodCompletion) it).getMethod();
                     LookupElementBuilder ele = LookupElementBuilder.create(method.getName())
-                            .withTailText(formatMethodParams(method));
+                            .withTypeText(typeName(method.getReturnType()))
+                            .withTailText(formatMethodParams(method))
+                            .withInsertHandler(new SuffixInsertHandler("(", ")"))
+                            ;
                     resultSet.addElement(ele);
                 } else if (it instanceof FieldCompletion) {
                     FieldDescriptor field = ((FieldCompletion) it).getField();
                     LookupElementBuilder ele = LookupElementBuilder.create(field.getName())
-                            .withTailText(NameUtil.getSimpleClassName(field.getName()));
+                            .withTypeText(typeName(field.getType()));
                     resultSet.addElement(ele);
                 }
             }
@@ -69,11 +77,11 @@ public class KalangCompletionContributor extends CompletionContributor {
 
         private String formatMethodParams(MethodDescriptor methodNode) {
             StringBuilder sb = new StringBuilder();
-            ParameterDescriptor[] parms = methodNode.getParameterDescriptors();
+            ParameterDescriptor[] params = methodNode.getParameterDescriptors();
             sb.append('(');
-            if (parms.length > 0) {
-                for (ParameterDescriptor p : parms) {
-                    sb.append(NameUtil.getSimpleClassName(p.getType().getName()))
+            if (params.length > 0) {
+                for (ParameterDescriptor p : params) {
+                    sb.append(typeName(p.getType()))
                             .append(' ')
                             .append(p.getName())
                             .append(',');
@@ -84,8 +92,32 @@ public class KalangCompletionContributor extends CompletionContributor {
             return sb.toString();
         }
 
+        private String typeName(Type type) {
+            return NameUtil.getSimpleClassName(type.getName());
+        }
+
     }
 
+    private static class SuffixInsertHandler implements InsertHandler<LookupElement> {
 
+        private final String stringBeforeCaret;
+
+        private final String stringAfterCaret;
+
+        public SuffixInsertHandler(String stringBeforeCaret, String stringAfterCaret) {
+            this.stringBeforeCaret = stringBeforeCaret;
+            this.stringAfterCaret = stringAfterCaret;
+        }
+
+        @Override
+        public void handleInsert(@NotNull InsertionContext context, @NotNull LookupElement item) {
+            @NotNull Editor editor = context.getEditor();
+            @NotNull Document doc = editor.getDocument();
+            @NotNull CaretModel cm = editor.getCaretModel();
+            doc.insertString(context.getTailOffset(),stringBeforeCaret + stringAfterCaret);
+            cm.moveCaretRelatively(stringBeforeCaret.length(), 0, false, false,true);
+        }
+
+    }
 
 }
