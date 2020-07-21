@@ -9,32 +9,27 @@ import javax.swing.*;
 /**
  * @author KasonYang
  */
-public class KalangFileType extends LanguageFileType {
+public class KalangShellFileType extends LanguageFileType {
 
-    public static final KalangFileType INSTANCE = new KalangFileType("kl");
+    public static final KalangShellFileType INSTANCE = new KalangShellFileType();
 
-    public static final KalangFileType INSTANCE_KALANG = new KalangFileType("kalang");
-
-    private final String extension;
-
-    public KalangFileType(String extension) {
+    public KalangShellFileType() {
         super(KalangLanguage.INSTANCE);
-        this.extension = extension;
     }
 
     @Override
     public @NotNull String getName() {
-        return "Kalang File";
+        return "Kalang shell File";
     }
 
     @Override
     public @NotNull String getDescription() {
-        return "Kalang file";
+        return "Kalang shell file";
     }
 
     @Override
     public @NotNull String getDefaultExtension() {
-        return extension;
+        return "kls";
     }
 
     @Override
