@@ -38,11 +38,11 @@ public class KalangCompleter {
         try {
             tokenNav.move(caret - 1);
         } catch (IndexOutOfBoundsException ex) {
-            return null;
+            return Collections.emptyList();
         }
         Token currentToken = tokenNav.getCurrentToken();
         if (!tokenNav.hasPrevious()) {
-            return null;
+            return Collections.emptyList();
         }
         tokenNav.previous(0);
         Token prevToken = tokenNav.getCurrentToken();
@@ -50,7 +50,7 @@ public class KalangCompleter {
             return completeMember(prevToken, caret);
         } else if (isIdentifier(currentToken) && isDotToken(prevToken)) {
             if (!tokenNav.hasPrevious()) {
-                return null;
+                return Collections.emptyList();
             }
             tokenNav.previous(0);
             Token prevPrevToken = tokenNav.getCurrentToken();
@@ -58,7 +58,7 @@ public class KalangCompleter {
         } else if (isDotDotToken(currentToken)) {
             return completeMixinMethod(prevToken, caret);
         }
-        return null;
+        return Collections.emptyList();
     }
 
 
@@ -69,7 +69,7 @@ public class KalangCompleter {
         if (node instanceof ExprNode) {
             Type targetType = ((ExprNode) node).getType();
             if (!(targetType instanceof ObjectType)) {
-                return null;
+                return Collections.emptyList();
             }
             ObjectType targetObjType = (ObjectType) targetType;
             return completeMembersForType(targetObjType, anchorOffset, false);
@@ -122,7 +122,7 @@ public class KalangCompleter {
             ClassType clsType = Types.getClassType(clsNode);
             return completeMixinMethodForType(clsType, anchorOffset);
         }
-        return null;
+        return Collections.emptyList();
     }
 
     private List<Completion> completeMixinMethodForType(Type type, int anchorOffset) {

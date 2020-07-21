@@ -47,7 +47,7 @@ public class KalangExternalAnnotator extends ExternalAnnotator<PsiFile, List<Dia
             OffsetRange offset = d.getOffset();
             TextRange textRange = TextRange.EMPTY_RANGE;
             String msg = d.getDescription();
-            if (offset != null) {
+            if (offset != null && offset.startOffset >= 0) {
                 textRange = new TextRange(offset.startOffset, offset.stopOffset + 1);
             }
             switch (kind) {
