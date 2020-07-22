@@ -13,6 +13,7 @@ import site.kason.kalang.sdk.compiler.ExtendKalangCompiler;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author KasonYang
@@ -34,7 +35,12 @@ public class KalangExternalAnnotator extends ExternalAnnotator<PsiFile, List<Dia
         String className = collectedInfo.getName();
         ExtendKalangCompiler compiler = CompilerManager.create(collectedInfo.getProject(), collectedInfo.getVirtualFile());
         List<Diagnosis> diagnosisList = new LinkedList<>();
-        compiler.setDiagnosisHandler(diagnosisList::add);
+        compiler.setDiagnosisHandler(d -> {
+            String dFile = d.getSource().getFileName();
+            if (Objects.equals(dFile, fileName)) {
+                diagnosisList.add(d);
+            }
+        });
         compiler.addSource(className, text, fileName);
         compiler.compile(CompilePhase.PHASE_SEMANTIC);
         return diagnosisList;
