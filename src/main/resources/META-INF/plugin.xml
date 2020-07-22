@@ -20,6 +20,7 @@
         <lang.syntaxHighlighterFactory language="Kalang" implementationClass="site.kason.intellij.highlighter.KalangSyntaxHighlighterFactory" />
         <completion.contributor language="Kalang" implementationClass="site.kason.intellij.completion.KalangCompletionContributor" />
         <externalAnnotator language="Kalang" implementationClass="site.kason.intellij.KalangExternalAnnotator"/>
+        <lang.braceMatcher language="Kalang" implementationClass="site.kason.intellij.editor.KalangBraceMatcher"/>
     </extensions>
 
     <actions>
