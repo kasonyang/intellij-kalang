@@ -4,29 +4,31 @@ import kalang.compiler.antlr.KalangParser;
 import kalang.compiler.ast.AstNode;
 import kalang.compiler.ast.ErrorousExpr;
 import kalang.compiler.ast.ExprStmt;
-import kalang.compiler.compile.CodeGenerator;
-import kalang.compiler.compile.CompilationUnit;
-import kalang.compiler.compile.Configuration;
-import kalang.compiler.compile.KalangCompiler;
+import kalang.compiler.compile.*;
 import kalang.compiler.compile.codegen.Ast2JavaStub;
 import kalang.compiler.compile.semantic.AstBuilder;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author KasonYang
  */
 public class ExtendKalangCompiler extends KalangCompiler {
 
-    public Map<ParseTree, AstNode> parseTreeAstNodeMap = new HashMap<ParseTree, AstNode>();
+    public Map<ParseTree, AstNode> parseTreeAstNodeMap = new HashMap<>();
 
-    public ExtendKalangCompiler() {
-    }
+    private final CacheHolder<String, Pair<KalangSource,CompilationUnit>> compilationCacheHolder;
 
-    public ExtendKalangCompiler(Configuration configuration) {
+    public ExtendKalangCompiler(
+            Configuration configuration,
+            CacheHolder<String, Pair<KalangSource,CompilationUnit>> compilationCacheHolder
+    ) {
         super(configuration);
+        this.compilationCacheHolder = compilationCacheHolder;
     }
 
     @Override
@@ -60,6 +62,23 @@ public class ExtendKalangCompiler extends KalangCompiler {
             }
 
         };
+    }
+
+    @Override
+    protected CompilationUnit newCompilationUnit(KalangSource source) {
+        String fileName = source.getFileName();
+        //only cache sources with file name
+        if (fileName == null || fileName.isEmpty()) {
+            return super.newCompilationUnit(source);
+        }
+        String key = source.getClassName();
+        Pair<KalangSource, CompilationUnit> cache = compilationCacheHolder.get(key);
+        if (cache == null || !Objects.equals(source.getText(), cache.getKey().getText())) {
+            CompilationUnit cu = super.newCompilationUnit(source);
+            cache = Pair.of(source, cu);
+            compilationCacheHolder.put(key, cache);
+        }
+        return cache.getRight();
     }
 
     @Override

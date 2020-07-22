@@ -48,7 +48,7 @@ public class KalangCompletionContributor extends CompletionContributor {
             //TODO fix className
             String className = file.getNameWithoutExtension();
             ExtendKalangCompiler compiler = CompilerManager.create(project, file);
-            compiler.addSource(className, text, fileName);
+            compiler.addSource(className, text, null);
             compiler.compile(CompilePhase.PHASE_BUILDAST);
             CompilationUnit cu = compiler.getCompilationUnit(className);
             KalangCompleter completer = new KalangCompleter(compiler.parseTreeAstNodeMap, cu);

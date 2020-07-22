@@ -7,10 +7,14 @@ import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
+import kalang.compiler.compile.CompilationUnit;
 import kalang.compiler.compile.Configuration;
+import kalang.compiler.compile.KalangSource;
 import kalang.compiler.compile.jvm.JvmAstLoader;
 import kalang.compiler.tool.FileSystemSourceLoader;
 import kalang.mixin.CollectionMixin;
+import org.apache.commons.lang3.tuple.Pair;
+import site.kason.kalang.sdk.compiler.CacheHolder;
 import site.kason.kalang.sdk.compiler.ExtendKalangCompiler;
 
 import java.io.File;
@@ -26,6 +30,8 @@ public class CompilerManager {
 
     private final static String[] EXTENSIONS = new String[] {"kl","kalang"};
 
+    private final static CacheHolder<String, Pair<KalangSource, CompilationUnit>> COMPILATION_UNIT_CACHE_HOLDER = new CacheHolder<>(100);
+
     public static ExtendKalangCompiler create(Project project, VirtualFile virtualFile) {
         Module module = ModuleUtil.findModuleForFile(virtualFile, project);
         Objects.requireNonNull(module);
@@ -39,7 +45,7 @@ public class CompilerManager {
         URLClassLoader urlClassLoader = new URLClassLoader(string2url(libUrls).toArray(new URL[0]));
         Configuration config = new Configuration();
         config.setAstLoader(new JvmAstLoader(null, urlClassLoader));
-        ExtendKalangCompiler compiler = new ExtendKalangCompiler(config);
+        ExtendKalangCompiler compiler = new ExtendKalangCompiler(config, COMPILATION_UNIT_CACHE_HOLDER);
         compiler.setSourceLoader(new FileSystemSourceLoader(srcDirs, EXTENSIONS, "utf8"));
         return compiler;
     }
