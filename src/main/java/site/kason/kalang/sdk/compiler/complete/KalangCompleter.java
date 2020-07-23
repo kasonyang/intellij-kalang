@@ -76,8 +76,8 @@ public class KalangCompleter {
         if (deleteBegin >= 0 && deleteStop >= 0) {
             source = source.substring(0, deleteBegin) + " " + source.substring(deleteStop + 1);
         }
-        compiler.addSource(className, source, null);
-        compiler.compile(CompilePhase.PHASE_BUILDAST);
+        compiler.setCompileTargetPhase(CompilePhase.PHASE_BUILDAST);
+        compiler.forceCompile(className, source, null);
         return compiler.getCompilationUnit(className);
     }
 

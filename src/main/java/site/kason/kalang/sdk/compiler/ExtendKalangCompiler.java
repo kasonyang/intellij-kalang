@@ -31,6 +31,12 @@ public class ExtendKalangCompiler extends KalangCompiler {
         this.compilationCacheHolder = compilationCacheHolder;
     }
 
+    public void forceCompile(String className, String source, String fileName) {
+        compilationCacheHolder.remove(className);
+        addSource(className, source, fileName);
+        compile();
+    }
+
     @Override
     public AstBuilder createAstBuilder(CompilationUnit compilationUnit, KalangParser parser) {
         return new AstBuilder(compilationUnit, parser) {

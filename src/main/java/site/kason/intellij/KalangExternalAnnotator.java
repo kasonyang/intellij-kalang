@@ -2,13 +2,16 @@ package site.kason.intellij;
 
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.ExternalAnnotator;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import kalang.compiler.compile.CompilePhase;
 import kalang.compiler.compile.Diagnosis;
 import kalang.compiler.compile.OffsetRange;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import site.kason.intellij.util.IdeaClassNameUtil;
 import site.kason.kalang.sdk.compiler.ExtendKalangCompiler;
 
 import java.util.LinkedList;
@@ -30,19 +33,18 @@ public class KalangExternalAnnotator extends ExternalAnnotator<PsiFile, List<Dia
     @Override
     public List<Diagnosis> doAnnotate(PsiFile collectedInfo) {
         String text = collectedInfo.getText();
-        //TODO fix className
-        String fileName = collectedInfo.getVirtualFile().getName();
-        String className = collectedInfo.getName();
-        ExtendKalangCompiler compiler = CompilerManager.create(collectedInfo.getProject(), collectedInfo.getVirtualFile());
+        VirtualFile vFile = collectedInfo.getVirtualFile();
+        @NotNull Project project = collectedInfo.getProject();
+        String className = IdeaClassNameUtil.getClassName(project, vFile);
+        ExtendKalangCompiler compiler = CompilerManager.create(project, vFile);
         List<Diagnosis> diagnosisList = new LinkedList<>();
         compiler.setDiagnosisHandler(d -> {
-            String dFile = d.getSource().getFileName();
-            if (Objects.equals(dFile, fileName)) {
+            if (Objects.equals(d.getSource().getClassName(), className)) {
                 diagnosisList.add(d);
             }
         });
-        compiler.addSource(className, text, fileName);
-        compiler.compile(CompilePhase.PHASE_SEMANTIC);
+        compiler.setCompileTargetPhase(CompilePhase.PHASE_SEMANTIC);
+        compiler.forceCompile(className, text, vFile.getPath());
         return diagnosisList;
     }
 

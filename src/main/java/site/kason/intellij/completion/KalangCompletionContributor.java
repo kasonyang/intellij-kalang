@@ -16,6 +16,7 @@ import kalang.compiler.core.Type;
 import kalang.compiler.util.NameUtil;
 import org.jetbrains.annotations.NotNull;
 import site.kason.intellij.CompilerManager;
+import site.kason.intellij.util.IdeaClassNameUtil;
 import site.kason.kalang.sdk.compiler.ExtendKalangCompiler;
 import site.kason.kalang.sdk.compiler.complete.Completion;
 import site.kason.kalang.sdk.compiler.complete.FieldCompletion;
@@ -45,9 +46,7 @@ public class KalangCompletionContributor extends CompletionContributor {
             @NotNull Project project = parameters.getOriginalFile().getProject();
             VirtualFile file = parameters.getOriginalFile().getVirtualFile();
             String text = parameters.getOriginalFile().getText();
-            String fileName = parameters.getOriginalFile().getName();
-            //TODO fix className
-            String className = file.getNameWithoutExtension();
+            String className = IdeaClassNameUtil.getClassName(project, file);
             ExtendKalangCompiler compiler = CompilerManager.create(project, file);
             KalangCompleter completer = new KalangCompleter(compiler);
             List<Completion> list = completer.complete(className, text, parameters.getOffset());
