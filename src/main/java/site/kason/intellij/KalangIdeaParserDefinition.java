@@ -49,7 +49,13 @@ public class KalangIdeaParserDefinition implements ParserDefinition {
     public static final TokenSet STRING =
             PSIElementTypeFactory.createTokenSet(
                     KalangLanguage.INSTANCE,
-                    KalangLexer.STRING);
+                    KalangLexer.STRING,
+                    KalangLexer.MultiLineStringLiteral,
+                    KalangLexer.InterpolationPreffixString,
+                    //KalangLexer.INTERPOLATION_INTERUPT,
+                    KalangLexer.INTERPOLATION_END,
+                    KalangLexer.INTERPOLATION_STRING
+                    );
 
     @Override
     public @NotNull Lexer createLexer(Project project) {
