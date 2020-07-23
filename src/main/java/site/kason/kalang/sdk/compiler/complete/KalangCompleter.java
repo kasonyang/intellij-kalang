@@ -7,12 +7,15 @@ import kalang.compiler.ast.ClassNode;
 import kalang.compiler.ast.ClassReference;
 import kalang.compiler.ast.ExprNode;
 import kalang.compiler.compile.CompilationUnit;
+import kalang.compiler.compile.CompilePhase;
 import kalang.compiler.core.*;
 import kalang.compiler.util.AstUtil;
+import kalang.compiler.util.LexerFactory;
 import kalang.compiler.util.ModifierUtil;
 import kalang.compiler.util.TokenNavigator;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.tree.ParseTree;
+import site.kason.kalang.sdk.compiler.ExtendKalangCompiler;
 import site.kason.kalang.sdk.compiler.ParseTreeNavigator;
 import site.kason.kalang.sdk.compiler.util.NavigatorUtil;
 
@@ -24,17 +27,19 @@ import java.util.*;
  */
 public class KalangCompleter {
 
-    //TODO move to compilation unit
-    private Map<ParseTree, AstNode> parseTreeAstNodeMap;
-    private CompilationUnit compilationUnit;
+    private ExtendKalangCompiler compiler;
 
-    public KalangCompleter(Map<ParseTree, AstNode> parseTreeAstNodeMap, CompilationUnit compilationUnit) {
-        this.parseTreeAstNodeMap = parseTreeAstNodeMap;
-        this.compilationUnit = compilationUnit;
+    public KalangCompleter(ExtendKalangCompiler compiler) {
+        this.compiler = compiler;
     }
 
-    public List<Completion> complete(int caret) {
-        TokenNavigator tokenNav = NavigatorUtil.createTokenNavigator(compilationUnit);
+    public List<Completion> complete(String className, String source, int caret) {
+        KalangLexer lexer = LexerFactory.createLexer(source);
+        CommonTokenStream inputStream = new CommonTokenStream(lexer);
+        while (inputStream.LA(1) != -1) {
+            inputStream.consume();
+        }
+        TokenNavigator tokenNav = new TokenNavigator(inputStream.getTokens());
         try {
             tokenNav.move(caret - 1);
         } catch (IndexOutOfBoundsException ex) {
@@ -47,42 +52,86 @@ public class KalangCompleter {
         tokenNav.previous(0);
         Token prevToken = tokenNav.getCurrentToken();
         if (isDotToken(currentToken)) {
-            return completeMember(prevToken, caret);
+            CompilationUnit cu = compile(className, source, currentToken.getStartIndex(), currentToken.getStopIndex());
+            return completeMember(cu, prevToken.getStopIndex(), caret);
         } else if (isIdentifier(currentToken) && isDotToken(prevToken)) {
             if (!tokenNav.hasPrevious()) {
                 return Collections.emptyList();
             }
             tokenNav.previous(0);
             Token prevPrevToken = tokenNav.getCurrentToken();
-            return completeMember(prevPrevToken, currentToken.getStartIndex());
+            CompilationUnit cu = compile(className, source, -1, -1);
+            return completeMember(cu, prevPrevToken.getStopIndex(), currentToken.getStartIndex());
         } else if (isDotDotToken(currentToken)) {
-            return completeMixinMethod(prevToken, caret);
+            CompilationUnit cu = compile(className, source, currentToken.getStartIndex(), currentToken.getStopIndex());
+            return completeMixinMethod(cu, prevToken.getStopIndex(), caret);
+        } else if (isDoubleColon(currentToken)) {
+            CompilationUnit cu = compile(className, source, currentToken.getStartIndex(), currentToken.getStopIndex());
+            return completeMethodRef(cu, prevToken.getStopIndex(), caret);
         }
         return Collections.emptyList();
     }
 
+    private CompilationUnit compile(String className, String source, int deleteBegin, int deleteStop) {
+        if (deleteBegin >= 0 && deleteStop >= 0) {
+            source = source.substring(0, deleteBegin) + " " + source.substring(deleteStop + 1);
+        }
+        compiler.addSource(className, source, null);
+        compiler.compile(CompilePhase.PHASE_BUILDAST);
+        return compiler.getCompilationUnit(className);
+    }
 
-    private List<Completion> completeMember(Token targetExprToken, int anchorOffset) {
+
+    private List<Completion> completeMember(CompilationUnit compilationUnit, int exprOffset, int anchorOffset) {
         ParseTreeNavigator parseTreeNav = NavigatorUtil.createParseTreeNavigator(compilationUnit);
-        ExpressionContext prevCtx = parseTreeNav.move(targetExprToken.getStopIndex(), ExpressionContext.class);
-        AstNode node = parseTreeAstNodeMap.get(prevCtx);
+        ExpressionContext prevCtx = parseTreeNav.move(exprOffset, ExpressionContext.class);
+        AstNode node = compiler.parseTreeAstNodeMap.get(prevCtx);
         if (node instanceof ExprNode) {
             Type targetType = ((ExprNode) node).getType();
             if (!(targetType instanceof ObjectType)) {
                 return Collections.emptyList();
             }
             ObjectType targetObjType = (ObjectType) targetType;
-            return completeMembersForType(targetObjType, anchorOffset, false);
+            return completeMembersForType(compilationUnit, targetObjType, anchorOffset, false);
         } else if (node instanceof ClassReference) {
             ClassReference cr = (ClassReference) node;
             ClassNode clsNode = cr.getReferencedClassNode();
             ClassType clsType = Types.getClassType(clsNode);
-            return completeMembersForType(clsType, anchorOffset, true);
+            return completeMembersForType(compilationUnit, clsType, anchorOffset, true);
         }
         return Collections.emptyList();
     }
 
-    private List<Completion> completeMembersForType(ObjectType objectType , int anchorOffset, @Nullable Boolean staticMember) {
+    private List<Completion> completeMethodRef(CompilationUnit compilationUnit, int exprOffset, int anchorOffset) {
+        ParseTreeNavigator parseTreeNav = NavigatorUtil.createParseTreeNavigator(compilationUnit);
+        ExpressionContext prevCtx = parseTreeNav.move(exprOffset, ExpressionContext.class);
+        AstNode node = compiler.parseTreeAstNodeMap.get(prevCtx);
+        if (node instanceof ExprNode) {
+            Type targetType = ((ExprNode) node).getType();
+            if (!(targetType instanceof ObjectType)) {
+                return Collections.emptyList();
+            }
+            ObjectType targetObjType = (ObjectType) targetType;
+            return completeMethodRefForType(compilationUnit, targetObjType, anchorOffset);
+        } else if (node instanceof ClassReference) {
+            ClassReference cr = (ClassReference) node;
+            ClassNode clsNode = cr.getReferencedClassNode();
+            ClassType clsType = Types.getClassType(clsNode);
+            return completeMethodRefForType(compilationUnit, clsType, anchorOffset);
+        }
+        return Collections.emptyList();
+    }
+
+    private List<Completion> completeMethodRefForType(CompilationUnit compilationUnit, ObjectType objectType , int anchorOffset) {
+        Set<MethodRefCompletion> results = new HashSet<>();
+        MethodDescriptor[] methods = objectType.getMethodDescriptors(compilationUnit.getAst(), true, true);
+        for (MethodDescriptor m : methods) {
+            results.add(new MethodRefCompletion(anchorOffset, m.getName()));
+        }
+        return new ArrayList<>(results);
+    }
+
+    private List<Completion> completeMembersForType(CompilationUnit compilationUnit, ObjectType objectType , int anchorOffset, @Nullable Boolean staticMember) {
         List<Completion> list = new LinkedList<Completion>();
         FieldDescriptor[] fs = objectType.getFieldDescriptors(compilationUnit.getAst());
         if (fs != null) {
@@ -109,23 +158,23 @@ public class KalangCompleter {
         return list;
     }
 
-    private List<Completion> completeMixinMethod(Token targetExprToken, int anchorOffset) {
+    private List<Completion> completeMixinMethod(CompilationUnit compilationUnit, int exprOffset, int anchorOffset) {
         ParseTreeNavigator parseTreeNav = NavigatorUtil.createParseTreeNavigator(compilationUnit);
-        ExpressionContext prevCtx = parseTreeNav.move(targetExprToken.getStopIndex(), ExpressionContext.class);
-        AstNode node = parseTreeAstNodeMap.get(prevCtx);
+        ExpressionContext prevCtx = parseTreeNav.move(exprOffset, ExpressionContext.class);
+        AstNode node = compiler.parseTreeAstNodeMap.get(prevCtx);
         if (node instanceof ExprNode) {
             Type targetType = ((ExprNode) node).getType();
-            return completeMixinMethodForType(targetType, anchorOffset);
+            return completeMixinMethodForType(compilationUnit, targetType, anchorOffset);
         } else if (node instanceof ClassReference) {
             ClassReference cr = (ClassReference) node;
             ClassNode clsNode = cr.getReferencedClassNode();
             ClassType clsType = Types.getClassType(clsNode);
-            return completeMixinMethodForType(clsType, anchorOffset);
+            return completeMixinMethodForType(compilationUnit, clsType, anchorOffset);
         }
         return Collections.emptyList();
     }
 
-    private List<Completion> completeMixinMethodForType(Type type, int anchorOffset) {
+    private List<Completion> completeMixinMethodForType(CompilationUnit compilationUnit, Type type, int anchorOffset) {
         Map<String, CompilationUnit.MemberImport> importedMethods = new HashMap<String, CompilationUnit.MemberImport>();
         List<ClassNode> importedPaths = compilationUnit.importedMixinPaths;
         for (ClassNode cn : importedPaths) {
@@ -167,6 +216,10 @@ public class KalangCompleter {
 
     private boolean isIdentifier(Token token) {
         return token.getType() == KalangLexer.Identifier;
+    }
+
+    private boolean isDoubleColon(Token token) {
+        return token.getType() == KalangLexer.DOUBLE_COLON;
     }
 
 }

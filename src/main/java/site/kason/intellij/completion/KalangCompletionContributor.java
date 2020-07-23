@@ -9,8 +9,6 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ProcessingContext;
-import kalang.compiler.compile.CompilationUnit;
-import kalang.compiler.compile.CompilePhase;
 import kalang.compiler.core.FieldDescriptor;
 import kalang.compiler.core.MethodDescriptor;
 import kalang.compiler.core.ParameterDescriptor;
@@ -34,10 +32,13 @@ import static com.intellij.patterns.PlatformPatterns.psiElement;
 public class KalangCompletionContributor extends CompletionContributor {
 
     public KalangCompletionContributor() {
-        extend(CompletionType.BASIC, psiElement().afterLeaf(psiElement().withText(".")), new MemberCompletionProvider());
+        BasicCompletionProvider provider = new BasicCompletionProvider();
+        extend(CompletionType.BASIC, psiElement().afterLeaf(psiElement().withText(".")), provider);
+        extend(CompletionType.BASIC, psiElement().afterLeaf(psiElement().withText("..")), provider);
+        extend(CompletionType.BASIC, psiElement().afterLeaf(psiElement().withText("::")), provider);
     }
 
-    private static class MemberCompletionProvider extends CompletionProvider<CompletionParameters> {
+    private static class BasicCompletionProvider extends CompletionProvider<CompletionParameters> {
 
         @Override
         protected void addCompletions(@NotNull CompletionParameters parameters, @NotNull ProcessingContext context, @NotNull CompletionResultSet result) {
@@ -48,15 +49,12 @@ public class KalangCompletionContributor extends CompletionContributor {
             //TODO fix className
             String className = file.getNameWithoutExtension();
             ExtendKalangCompiler compiler = CompilerManager.create(project, file);
-            compiler.addSource(className, text, null);
-            compiler.compile(CompilePhase.PHASE_BUILDAST);
-            CompilationUnit cu = compiler.getCompilationUnit(className);
-            KalangCompleter completer = new KalangCompleter(compiler.parseTreeAstNodeMap, cu);
-            List<Completion> list = completer.complete(parameters.getOffset());
+            KalangCompleter completer = new KalangCompleter(compiler);
+            List<Completion> list = completer.complete(className, text, parameters.getOffset());
             processCompletionResult(list, result);
         }
 
-        private void processCompletionResult(List<Completion> list, CompletionResultSet resultSet) {
+        protected void processCompletionResult(List<Completion> list, CompletionResultSet resultSet) {
             for (Completion it : list) {
                 if (it instanceof MethodCompletion) {
                     MethodDescriptor method = ((MethodCompletion) it).getMethod();
@@ -70,6 +68,9 @@ public class KalangCompletionContributor extends CompletionContributor {
                     FieldDescriptor field = ((FieldCompletion) it).getField();
                     LookupElementBuilder ele = LookupElementBuilder.create(field.getName())
                             .withTypeText(typeName(field.getType()));
+                    resultSet.addElement(ele);
+                } else {
+                    LookupElementBuilder ele = LookupElementBuilder.create(it.getCompleteString());
                     resultSet.addElement(ele);
                 }
             }

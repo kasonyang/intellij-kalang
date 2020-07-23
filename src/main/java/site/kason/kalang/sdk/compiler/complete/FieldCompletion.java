@@ -25,4 +25,9 @@ public class FieldCompletion  implements Completion{
         return anchorOffset;
     }
 
+    @Override
+    public String getCompleteString() {
+        return field.getName();
+    }
+
 }

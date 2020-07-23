@@ -7,5 +7,6 @@ public interface Completion {
 
     int getAnchorOffset();
 
+    String getCompleteString();
 
 }

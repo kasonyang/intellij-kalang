@@ -24,4 +24,9 @@ public class MethodCompletion implements Completion {
     public int getAnchorOffset() {
         return anchorOffset;
     }
+
+    @Override
+    public String getCompleteString() {
+        return method.getName();
+    }
 }
