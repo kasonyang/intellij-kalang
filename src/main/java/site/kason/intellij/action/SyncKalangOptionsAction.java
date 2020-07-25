@@ -11,7 +11,7 @@ import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.roots.libraries.LibraryTable;
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar;
 import com.intellij.openapi.vfs.VirtualFile;
-import kalang.compiler.shell.ShellOptionParser;
+import kalang.compiler.shell.KalangOption;
 import kalang.mixin.CollectionMixin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,7 +26,7 @@ import java.util.Arrays;
 /**
  * @author KasonYang
  */
-public class SyncShellOptionsAction extends AnAction {
+public class SyncKalangOptionsAction extends AnAction {
 
 
     private final static String OPTIONS_FILE = "kalangsh.options";
@@ -57,9 +57,9 @@ public class SyncShellOptionsAction extends AnAction {
         try {
             InputStream is = optionsFile.getInputStream();
             InputStreamReader reader = new InputStreamReader(is);
-            ShellOptionParser sop = new ShellOptionParser();
-            sop.parse(new StringReader(""), reader, true);
-            String[] classPaths = CollectionMixin.map(sop.getClassPaths(), String.class, this::formatJarUrl);
+            KalangOption option = new KalangOption();
+            option.parse(new StringReader(""), reader, true);
+            String[] classPaths = CollectionMixin.map(option.getClassPaths(), String.class, this::formatJarUrl);
             ApplicationManager.getApplication().runWriteAction(() -> updateDependencies(project, classPaths));
         } catch (IOException e) {
             e.printStackTrace();
