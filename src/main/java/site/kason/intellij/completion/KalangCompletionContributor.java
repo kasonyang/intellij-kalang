@@ -8,6 +8,7 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.ProcessingContext;
 import kalang.compiler.core.FieldDescriptor;
 import kalang.compiler.core.MethodDescriptor;
@@ -32,11 +33,37 @@ import static com.intellij.patterns.PlatformPatterns.psiElement;
  */
 public class KalangCompletionContributor extends CompletionContributor {
 
+    private final static InsertHandler<LookupElement>
+            METHOD_INSERT_HANDLER = new SuffixInsertHandler<>("(", ")");
+
     public KalangCompletionContributor() {
-        BasicCompletionProvider provider = new BasicCompletionProvider();
-        extend(CompletionType.BASIC, psiElement().afterLeaf(psiElement().withText(".")), provider);
-        extend(CompletionType.BASIC, psiElement().afterLeaf(psiElement().withText("..")), provider);
-        extend(CompletionType.BASIC, psiElement().afterLeaf(psiElement().withText("::")), provider);
+        extend(CompletionType.BASIC, psiElement().afterLeaf(".","..","..."), new BasicCompletionProvider());
+        extend(CompletionType.BASIC, psiElement().afterLeaf("new"), new ClassNameCompletionProvider(
+                new SuffixInsertHandler<>("(", ")")
+        ));
+        extend(CompletionType.BASIC, psiElement().afterLeaf("import"), new ClassNameCompletionProvider(
+                new ImportClassInsertHandler()
+        ));
+    }
+
+    private static class ClassNameCompletionProvider extends CompletionProvider<CompletionParameters> {
+
+        private final InsertHandler<JavaPsiClassReferenceElement> insertHandler;
+
+        private ClassNameCompletionProvider(InsertHandler<JavaPsiClassReferenceElement> insertHandler) {
+            this.insertHandler = insertHandler;
+        }
+
+
+        @Override
+        protected void addCompletions(@NotNull CompletionParameters parameters, @NotNull ProcessingContext context, @NotNull CompletionResultSet result) {
+            @NotNull Project project = parameters.getOriginalFile().getProject();
+            AllClassesGetter.processJavaClasses(result.getPrefixMatcher(), project, GlobalSearchScope.allScope(project), psiClass -> {
+                result.addElement(AllClassesGetter.createLookupItem(psiClass, insertHandler));
+                return true;
+            });
+        }
+
     }
 
     private static class BasicCompletionProvider extends CompletionProvider<CompletionParameters> {
@@ -60,7 +87,7 @@ public class KalangCompletionContributor extends CompletionContributor {
                     LookupElementBuilder ele = LookupElementBuilder.create(method.getName())
                             .withTypeText(typeName(method.getReturnType()))
                             .withTailText(formatMethodParams(method))
-                            .withInsertHandler(new SuffixInsertHandler("(", ")"))
+                            .withInsertHandler(METHOD_INSERT_HANDLER)
                             ;
                     resultSet.addElement(ele);
                 } else if (it instanceof FieldCompletion) {
@@ -98,7 +125,22 @@ public class KalangCompletionContributor extends CompletionContributor {
 
     }
 
-    private static class SuffixInsertHandler implements InsertHandler<LookupElement> {
+    private static class ImportClassInsertHandler implements InsertHandler<JavaPsiClassReferenceElement> {
+
+        @Override
+        public void handleInsert(@NotNull InsertionContext context, @NotNull JavaPsiClassReferenceElement item) {
+            @NotNull Editor editor = context.getEditor();
+            @NotNull Document doc = editor.getDocument();
+            @NotNull CaretModel cm = editor.getCaretModel();
+            String qName = item.getQualifiedName();
+            int startOffset = context.getStartOffset();
+            int tailOffset = context.getTailOffset();
+            doc.replaceString(startOffset, tailOffset, qName);
+        }
+
+    }
+
+    private static class SuffixInsertHandler<T extends LookupElement> implements InsertHandler<T> {
 
         private final String stringBeforeCaret;
 
@@ -110,7 +152,7 @@ public class KalangCompletionContributor extends CompletionContributor {
         }
 
         @Override
-        public void handleInsert(@NotNull InsertionContext context, @NotNull LookupElement item) {
+        public void handleInsert(@NotNull InsertionContext context, @NotNull T item) {
             @NotNull Editor editor = context.getEditor();
             @NotNull Document doc = editor.getDocument();
             @NotNull CaretModel cm = editor.getCaretModel();
