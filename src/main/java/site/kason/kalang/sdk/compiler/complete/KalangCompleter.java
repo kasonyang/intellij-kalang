@@ -7,7 +7,7 @@ import kalang.compiler.ast.ClassNode;
 import kalang.compiler.ast.ClassReference;
 import kalang.compiler.ast.ExprNode;
 import kalang.compiler.compile.CompilationUnit;
-import kalang.compiler.compile.CompilePhase;
+import kalang.compiler.compile.StandardCompilePhases;
 import kalang.compiler.core.*;
 import kalang.compiler.util.AstUtil;
 import kalang.compiler.util.LexerFactory;
@@ -76,7 +76,7 @@ public class KalangCompleter {
         if (deleteBegin >= 0 && deleteStop >= 0) {
             source = source.substring(0, deleteBegin) + " " + source.substring(deleteStop + 1);
         }
-        compiler.setCompileTargetPhase(CompilePhase.PHASE_BUILDAST);
+        compiler.setCompileTargetPhase(StandardCompilePhases.PARSE_BODY);
         compiler.forceCompile(className, source, null);
         return compiler.getCompilationUnit(className);
     }

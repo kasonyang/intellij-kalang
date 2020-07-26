@@ -9,6 +9,7 @@ import com.intellij.psi.PsiFile;
 import kalang.compiler.compile.CompilePhase;
 import kalang.compiler.compile.Diagnosis;
 import kalang.compiler.compile.OffsetRange;
+import kalang.compiler.compile.StandardCompilePhases;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import site.kason.intellij.util.IdeaClassNameUtil;
@@ -43,7 +44,7 @@ public class KalangExternalAnnotator extends ExternalAnnotator<PsiFile, List<Dia
                 diagnosisList.add(d);
             }
         });
-        compiler.setCompileTargetPhase(CompilePhase.PHASE_SEMANTIC);
+        compiler.setCompileTargetPhase(StandardCompilePhases.ANALYZE_SEMANTIC);
         compiler.forceCompile(className, text, vFile.getPath());
         return diagnosisList;
     }
