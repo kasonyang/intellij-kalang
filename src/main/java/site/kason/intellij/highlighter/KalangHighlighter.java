@@ -62,19 +62,20 @@ public class KalangHighlighter extends SyntaxHighlighterBase {
         switch (tokenTypeId) {
             case KalangLexer.Identifier:
                 return ID;
-            case KalangLexer.OVERRIDE:
             case KalangLexer.ABSTRACT:
+            case KalangLexer.AS:
             case KalangLexer.ASSERT:
             case KalangLexer.BOOLEAN:
             case KalangLexer.BREAK:
             case KalangLexer.BYTE:
+            case KalangLexer.BooleanLiteral:
             case KalangLexer.CASE:
             case KalangLexer.CATCH:
             case KalangLexer.CHAR:
             case KalangLexer.CLASS:
             case KalangLexer.CONST:
-            case KalangLexer.CONTINUE:
             case KalangLexer.CONSTRUCTOR:
+            case KalangLexer.CONTINUE:
             case KalangLexer.DEFAULT:
             case KalangLexer.DO:
             case KalangLexer.DOUBLE:
@@ -85,16 +86,20 @@ public class KalangHighlighter extends SyntaxHighlighterBase {
             case KalangLexer.FINALLY:
             case KalangLexer.FLOAT:
             case KalangLexer.FOR:
-            case KalangLexer.IF:
+            case KalangLexer.FOREACH:
             case KalangLexer.GOTO:
+            case KalangLexer.IF:
             case KalangLexer.IMPLEMENTS:
             case KalangLexer.IMPORT:
+            case KalangLexer.IN:
             case KalangLexer.INSTANCEOF:
             case KalangLexer.INT:
             case KalangLexer.INTERFACE:
             case KalangLexer.LONG:
             case KalangLexer.NATIVE:
             case KalangLexer.NEW:
+            case KalangLexer.NullLiteral:
+            case KalangLexer.OVERRIDE:
             case KalangLexer.PACKAGE:
             case KalangLexer.PRIVATE:
             case KalangLexer.PROTECTED:
@@ -111,15 +116,11 @@ public class KalangHighlighter extends SyntaxHighlighterBase {
             case KalangLexer.THROWS:
             case KalangLexer.TRANSIENT:
             case KalangLexer.TRY:
+            case KalangLexer.VAL:
+            case KalangLexer.VAR:
             case KalangLexer.VOID:
             case KalangLexer.VOLATILE:
             case KalangLexer.WHILE:
-            case KalangLexer.NullLiteral:
-            case KalangLexer.VAR:
-            case KalangLexer.VAL:
-            case KalangLexer.FOREACH:
-            case KalangLexer.AS:
-            case KalangLexer.BooleanLiteral:
                 return KEYWORD;
             case KalangLexer.StringLiteral:
                 return STRING;
