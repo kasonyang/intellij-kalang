@@ -26,8 +26,8 @@
     <actions>
         <!-- Add your actions here -->
         <action id="site.kason.intellij.action.SyncKalangOptionsAction"
-                class="site.kason.intellij.action.SyncKalangOptionsAction" text="SyncShellOptions"
-                description="sync shell options">
+                class="site.kason.intellij.action.SyncKalangOptionsAction" text="Sync Kalang Options"
+                description="sync kalang options">
             <add-to-group group-id="ToolsMenu" anchor="first"/>
         </action>
     </actions>

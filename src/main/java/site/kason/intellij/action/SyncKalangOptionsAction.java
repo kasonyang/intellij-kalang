@@ -29,7 +29,7 @@ import java.util.Arrays;
 public class SyncKalangOptionsAction extends AnAction {
 
 
-    private final static String OPTIONS_FILE = "kalangsh.options";
+    private final static String OPTIONS_FILE = "kalang.options";
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
