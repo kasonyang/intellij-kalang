@@ -31,6 +31,8 @@ public class KalangHighlighter extends SyntaxHighlighterBase {
             createTextAttributesKey("SAMPLE_LINE_COMMENT", DefaultLanguageHighlighterColors.LINE_COMMENT);
     public static final TextAttributesKey BLOCK_COMMENT =
             createTextAttributesKey("SAMPLE_BLOCK_COMMENT", DefaultLanguageHighlighterColors.BLOCK_COMMENT);
+    public static final TextAttributesKey NUMBER =
+            createTextAttributesKey("SAMPLE_NUMBER", DefaultLanguageHighlighterColors.NUMBER);
 
     static {
         PSIElementTypeFactory.defineLanguageIElementTypes(KalangLanguage.INSTANCE,
@@ -123,10 +125,18 @@ public class KalangHighlighter extends SyntaxHighlighterBase {
             case KalangLexer.WHILE:
                 return KEYWORD;
             case KalangLexer.StringLiteral:
+            case KalangLexer.MultiLineStringLiteral:
+            case KalangLexer.InterpolationPreffixString:
+            case KalangLexer.INTERPOLATION_INTERUPT:
+            case KalangLexer.INTERPOLATION_END:
+            case KalangLexer.INTERPOLATION_STRING:
                 return STRING;
             case KalangLexer.COMMENT:
             case KalangLexer.LINE_COMMENT:
                 return LINE_COMMENT;
+            case KalangLexer.IntegerLiteral:
+            case KalangLexer.FloatingPointLiteral:
+                return NUMBER;
             default:
                 return null;
         }
