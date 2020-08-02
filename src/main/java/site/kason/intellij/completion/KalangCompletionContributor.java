@@ -84,7 +84,7 @@ public class KalangCompletionContributor extends CompletionContributor {
             for (Completion it : list) {
                 if (it instanceof MethodCompletion) {
                     MethodDescriptor method = ((MethodCompletion) it).getMethod();
-                    LookupElementBuilder ele = LookupElementBuilder.create(method.getName())
+                    LookupElementBuilder ele = LookupElementBuilder.create(method, method.getName())
                             .withTypeText(typeName(method.getReturnType()))
                             .withTailText(formatMethodParams(method))
                             .withInsertHandler(METHOD_INSERT_HANDLER)
