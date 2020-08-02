@@ -19,8 +19,8 @@ public class KalangBraceMatcher implements PairedBraceMatcher {
     public BracePair[] getPairs() {
         return new BracePair[] {
                 new BracePair(getTokenElementType(LPAREN), getTokenElementType(RPAREN), false),
-                new BracePair(getTokenElementType(LBRACE), getTokenElementType(RBRACE), false),
-                new BracePair(getTokenElementType(LBRACK), getTokenElementType(RBRACK), true),
+                new BracePair(getTokenElementType(LBRACE), getTokenElementType(RBRACE), true),
+                new BracePair(getTokenElementType(LBRACK), getTokenElementType(RBRACK), false),
                 //new BracePair(getTokenElementType(LT), getTokenElementType(GT), false)
         };
     }
