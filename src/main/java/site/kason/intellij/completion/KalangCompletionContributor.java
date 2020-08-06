@@ -74,9 +74,10 @@ public class KalangCompletionContributor extends CompletionContributor {
             VirtualFile file = parameters.getOriginalFile().getVirtualFile();
             String text = parameters.getOriginalFile().getText();
             String className = IdeaClassNameUtil.getClassName(project, file);
+            boolean script = file.getName().endsWith(".kls");
             ExtendKalangCompiler compiler = CompilerManager.create(project, file);
             KalangCompleter completer = new KalangCompleter(compiler);
-            List<Completion> list = completer.complete(className, text, parameters.getOffset());
+            List<Completion> list = completer.complete(className, text, script, parameters.getOffset());
             processCompletionResult(list, result);
         }
 

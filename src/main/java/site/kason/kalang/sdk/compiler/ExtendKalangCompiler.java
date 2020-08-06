@@ -32,8 +32,12 @@ public class ExtendKalangCompiler extends KalangCompiler {
     }
 
     public void forceCompile(String className, String source, String fileName) {
+        forceCompile(className, source, fileName, fileName != null && fileName.endsWith(".kls"));
+    }
+
+    public void forceCompile(String className, String source, String fileName, boolean script) {
         compilationCacheHolder.remove(className);
-        addSource(className, source, fileName);
+        addSource(className, source, fileName, script);
         compile();
     }
 

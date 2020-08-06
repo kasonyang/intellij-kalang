@@ -22,7 +22,7 @@ import site.kason.intellij.psi.RulePsiNode;
 /**
  * @author KasonYang
  */
-public class KalangIdeaParserDefinition implements ParserDefinition {
+public abstract class KalangParserDefinitionBase implements ParserDefinition {
 
     public static final IFileElementType FILE = new IFileElementType(KalangLanguage.INSTANCE);
 
@@ -55,7 +55,13 @@ public class KalangIdeaParserDefinition implements ParserDefinition {
                     //KalangLexer.INTERPOLATION_INTERUPT,
                     KalangLexer.INTERPOLATION_END,
                     KalangLexer.INTERPOLATION_STRING
-                    );
+            );
+
+    private final boolean script;
+
+    public KalangParserDefinitionBase(boolean script) {
+        this.script = script;
+    }
 
     @Override
     public @NotNull Lexer createLexer(Project project) {
@@ -65,7 +71,7 @@ public class KalangIdeaParserDefinition implements ParserDefinition {
 
     @Override
     public PsiParser createParser(Project project) {
-        return new KalangIdeaParser();
+        return new KalangIdeaParser(script);
     }
 
     @Override
@@ -104,7 +110,7 @@ public class KalangIdeaParserDefinition implements ParserDefinition {
 
     @Override
     public PsiFile createFile(FileViewProvider viewProvider) {
-        return new KalangFile(viewProvider);
+        return script ? new KalangShellFile(viewProvider) : new KalangFile(viewProvider);
     }
 
 }

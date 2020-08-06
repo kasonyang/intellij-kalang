@@ -33,7 +33,7 @@ public class KalangCompleter {
         this.compiler = compiler;
     }
 
-    public List<Completion> complete(String className, String source, int caret) {
+    public List<Completion> complete(String className, String source, boolean script, int caret) {
         KalangLexer lexer = LexerFactory.createLexer(source);
         CommonTokenStream inputStream = new CommonTokenStream(lexer);
         while (inputStream.LA(1) != -1) {
@@ -52,7 +52,7 @@ public class KalangCompleter {
         tokenNav.previous(0);
         Token prevToken = tokenNav.getCurrentToken();
         if (isDotToken(currentToken)) {
-            CompilationUnit cu = compile(className, source, currentToken.getStartIndex(), currentToken.getStopIndex());
+            CompilationUnit cu = compile(className, source, script, currentToken.getStartIndex(), currentToken.getStopIndex());
             return completeMember(cu, prevToken.getStopIndex(), caret);
         } else if (isIdentifier(currentToken) && isDotToken(prevToken)) {
             if (!tokenNav.hasPrevious()) {
@@ -60,24 +60,29 @@ public class KalangCompleter {
             }
             tokenNav.previous(0);
             Token prevPrevToken = tokenNav.getCurrentToken();
-            CompilationUnit cu = compile(className, source, -1, -1);
+            CompilationUnit cu = compile(className, source, script, -1, -1);
             return completeMember(cu, prevPrevToken.getStopIndex(), currentToken.getStartIndex());
         } else if (isDotDotToken(currentToken)) {
-            CompilationUnit cu = compile(className, source, currentToken.getStartIndex(), currentToken.getStopIndex());
+            CompilationUnit cu = compile(className, source, script, currentToken.getStartIndex(), currentToken.getStopIndex());
             return completeMixinMethod(cu, prevToken.getStopIndex(), caret);
         } else if (isDoubleColon(currentToken)) {
-            CompilationUnit cu = compile(className, source, currentToken.getStartIndex(), currentToken.getStopIndex());
+            CompilationUnit cu = compile(className, source, script, currentToken.getStartIndex(), currentToken.getStopIndex());
             return completeMethodRef(cu, prevToken.getStopIndex(), caret);
         }
         return Collections.emptyList();
     }
 
-    private CompilationUnit compile(String className, String source, int deleteBegin, int deleteStop) {
+    private CompilationUnit compile(String className, String source,  boolean script, int deleteBegin, int deleteStop) {
         if (deleteBegin >= 0 && deleteStop >= 0) {
             source = source.substring(0, deleteBegin) + " " + source.substring(deleteStop + 1);
         }
         compiler.setCompileTargetPhase(StandardCompilePhases.PARSE_BODY);
-        compiler.forceCompile(className, source, null);
+        compiler.setDiagnosisHandler(dh -> {});
+        try {
+            compiler.forceCompile(className, source, null, script);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
         return compiler.getCompilationUnit(className);
     }
 

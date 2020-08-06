@@ -14,8 +14,11 @@ import org.antlr.v4.runtime.tree.ParseTree;
  */
 public class KalangIdeaParser extends ANTLRParserAdaptor {
 
-    public KalangIdeaParser() {
+    private boolean script;
+
+    public KalangIdeaParser(boolean script) {
         super(KalangLanguage.INSTANCE, new KalangParser(null));
+        this.script = script;
     }
 
     @Override
@@ -40,7 +43,8 @@ public class KalangIdeaParser extends ANTLRParserAdaptor {
 
         });
         if (root instanceof IFileElementType) {
-            return ((KalangParser) parser).compilationUnit();
+            KalangParser kp = (KalangParser) parser;
+            return script ? kp.scriptCompilationUnit() : kp.standardCompilationUnit();
         }
         throw new UnsupportedOperationException("unknown rule");
     }

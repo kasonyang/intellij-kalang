@@ -16,12 +16,13 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <fileTypeFactory implementation="site.kason.intellij.KalangFileTypeFactory" />
-        <lang.parserDefinition language="Kalang" implementationClass="site.kason.intellij.KalangIdeaParserDefinition" />
         <lang.syntaxHighlighterFactory language="Kalang" implementationClass="site.kason.intellij.highlighter.KalangSyntaxHighlighterFactory" />
         <completion.contributor language="Kalang" implementationClass="site.kason.intellij.completion.KalangCompletionContributor" />
         <externalAnnotator language="Kalang" implementationClass="site.kason.intellij.KalangExternalAnnotator"/>
         <lang.braceMatcher language="Kalang" implementationClass="site.kason.intellij.editor.KalangBraceMatcher"/>
         <lang.foldingBuilder language="Kalang" implementationClass="site.kason.intellij.KalangFoldingBuilder"/>
+        <lang.parserDefinition language="Kalang" implementationClass="site.kason.intellij.KalangShellParserDefinition"/>
+        <lang.parserDefinition language="Kalang" implementationClass="site.kason.intellij.KalangStandardParserDefinition"/>
     </extensions>
 
     <actions>
