@@ -32,4 +32,6 @@
             <add-to-group group-id="ToolsMenu" anchor="first"/>
         </action>
     </actions>
+
+    <depends>com.intellij.modules.java</depends>
 </idea-plugin>
