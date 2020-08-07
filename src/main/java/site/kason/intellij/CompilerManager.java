@@ -32,6 +32,8 @@ public class CompilerManager {
 
     private final static CacheHolder<String, Pair<KalangSource, CompilationUnit>> COMPILATION_UNIT_CACHE_HOLDER = new CacheHolder<>(100);
 
+    private final static Map<Project, Pair<String, JvmAstLoader>> astLoaderMap = new WeakHashMap<>();
+
     public static ExtendKalangCompiler create(Project project, VirtualFile virtualFile) {
         Module module = ModuleUtil.findModuleForFile(virtualFile, project);
         Objects.requireNonNull(module);
@@ -42,9 +44,16 @@ public class CompilerManager {
         });
         VirtualFile[] srcRoots = ModuleRootManager.getInstance(module).getSourceRoots();
         File[] srcDirs = CollectionMixin.map(srcRoots, File.class, VfsUtil::virtualToIoFile);
-        URLClassLoader urlClassLoader = new URLClassLoader(string2url(libUrls).toArray(new URL[0]));
+        Pair<String, JvmAstLoader> astLoaderPair = astLoaderMap.get(project);
+        String libUrlsStr = libUrls.toString();
+        if (astLoaderPair == null || !Objects.equals(astLoaderPair.getLeft(), libUrlsStr)) {
+            URLClassLoader urlClassLoader = new URLClassLoader(string2url(libUrls).toArray(new URL[0]));
+            JvmAstLoader astLoader = new JvmAstLoader(null, urlClassLoader);
+            astLoaderPair = Pair.of(libUrlsStr, astLoader);
+            astLoaderMap.put(project, astLoaderPair);
+        }
         Configuration config = new Configuration();
-        config.setAstLoader(new JvmAstLoader(null, urlClassLoader));
+        config.setAstLoader(astLoaderPair.getRight());
         ExtendKalangCompiler compiler = new ExtendKalangCompiler(config, COMPILATION_UNIT_CACHE_HOLDER);
         compiler.setSourceLoader(new FileSystemSourceLoader(srcDirs, EXTENSIONS, "utf8"));
         return compiler;

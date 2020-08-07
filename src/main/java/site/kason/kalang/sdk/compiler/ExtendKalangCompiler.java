@@ -7,9 +7,13 @@ import kalang.compiler.ast.ExprStmt;
 import kalang.compiler.compile.*;
 import kalang.compiler.compile.codegen.Ast2JavaStub;
 import kalang.compiler.compile.semantic.AstBuilder;
+import kalang.compiler.profile.Profiler;
+import kalang.compiler.profile.Span;
+import kalang.compiler.profile.SpanFormatter;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -22,6 +26,8 @@ public class ExtendKalangCompiler extends KalangCompiler {
     public Map<ParseTree, AstNode> parseTreeAstNodeMap = new HashMap<>();
 
     private final CacheHolder<String, Pair<KalangSource,CompilationUnit>> compilationCacheHolder;
+
+    private boolean enableProfileOutput = false;
 
     public ExtendKalangCompiler(
             Configuration configuration,
@@ -38,7 +44,10 @@ public class ExtendKalangCompiler extends KalangCompiler {
     public void forceCompile(String className, String source, String fileName, boolean script) {
         compilationCacheHolder.remove(className);
         addSource(className, source, fileName, script);
+        Profiler.getInstance().startProfile();
         compile();
+        Profiler.getInstance().stopProfile();
+        outputProfileInfo();
     }
 
     @Override
@@ -94,6 +103,19 @@ public class ExtendKalangCompiler extends KalangCompiler {
     @Override
     public CodeGenerator createCodeGenerator(CompilationUnit compilationUnit) {
         return new Ast2JavaStub(compilationUnit);
+    }
+
+    private void outputProfileInfo() {
+        Span rootSpan = Profiler.getInstance().getRootSpan();
+        if (rootSpan == null) {
+            return;
+        }
+        if (enableProfileOutput) {
+            PrintStream os = new PrintStream(System.err);
+            new SpanFormatter().format(rootSpan,os);
+        }
+        long time = rootSpan.getStopTime() - rootSpan.getStartTime();
+        System.err.println("compiled in " + time + "ms");
     }
 
 }
