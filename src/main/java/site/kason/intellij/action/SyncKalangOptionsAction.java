@@ -5,6 +5,9 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.*;
 import com.intellij.openapi.roots.libraries.Library;
@@ -47,7 +50,12 @@ public class SyncKalangOptionsAction extends AnAction {
         for (VirtualFile root : roots) {
             VirtualFile optionsFile = root.findChild(OPTIONS_FILE);
             if (optionsFile != null) {
-                loadOptions(project, optionsFile);
+                ProgressManager.getInstance().run(new Task.Backgroundable(project, "Sync kalang options") {
+                    @Override
+                    public void run(@NotNull ProgressIndicator indicator) {
+                        loadOptions(project, optionsFile);
+                    }
+                });
                 return;
             }
         }
@@ -60,7 +68,9 @@ public class SyncKalangOptionsAction extends AnAction {
             KalangOption option = new KalangOption();
             option.parse(new StringReader(""), reader, true);
             String[] classPaths = CollectionMixin.map(option.getClassPaths(), String.class, this::formatJarUrl);
-            ApplicationManager.getApplication().runWriteAction(() -> updateDependencies(project, classPaths));
+            ApplicationManager.getApplication().invokeLater(() -> {
+                ApplicationManager.getApplication().runWriteAction(() -> updateDependencies(project, classPaths));
+            });
         } catch (IOException e) {
             e.printStackTrace();
         }
