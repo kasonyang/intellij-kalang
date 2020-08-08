@@ -37,7 +37,7 @@ public class KalangCompletionContributor extends CompletionContributor {
             METHOD_INSERT_HANDLER = new SuffixInsertHandler<>("(", ")");
 
     public KalangCompletionContributor() {
-        extend(CompletionType.BASIC, psiElement().afterLeaf(".","..","..."), new BasicCompletionProvider());
+        extend(CompletionType.BASIC, psiElement().afterLeaf(".","..","::"), new BasicCompletionProvider());
         extend(CompletionType.BASIC, psiElement().afterLeaf("new"), new ClassNameCompletionProvider(
                 new SuffixInsertHandler<>("(", ")")
         ));

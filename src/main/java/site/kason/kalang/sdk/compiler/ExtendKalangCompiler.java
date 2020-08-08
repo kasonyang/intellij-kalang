@@ -2,8 +2,7 @@ package site.kason.kalang.sdk.compiler;
 
 import kalang.compiler.antlr.KalangParser;
 import kalang.compiler.ast.AstNode;
-import kalang.compiler.ast.ErrorousExpr;
-import kalang.compiler.ast.ExprStmt;
+import kalang.compiler.ast.ExprNode;
 import kalang.compiler.compile.*;
 import kalang.compiler.compile.codegen.Ast2JavaStub;
 import kalang.compiler.compile.semantic.AstBuilder;
@@ -13,10 +12,9 @@ import kalang.compiler.profile.SpanFormatter;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.lang3.tuple.Pair;
 
+import javax.annotation.Nullable;
 import java.io.PrintStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * @author KasonYang
@@ -26,6 +24,8 @@ public class ExtendKalangCompiler extends KalangCompiler {
     public Map<ParseTree, AstNode> parseTreeAstNodeMap = new HashMap<>();
 
     private final CacheHolder<String, Pair<KalangSource,CompilationUnit>> compilationCacheHolder;
+
+    private final Set<String> validCompilationUnits = new HashSet<>();
 
     private boolean enableProfileOutput = false;
 
@@ -43,8 +43,9 @@ public class ExtendKalangCompiler extends KalangCompiler {
 
     public void forceCompile(String className, String source, String fileName, boolean script) {
         compilationCacheHolder.remove(className);
-        addSource(className, source, fileName, script);
+        validCompilationUnits.clear();
         Profiler.getInstance().startProfile();
+        addSource(className, source, fileName, script);
         compile();
         Profiler.getInstance().stopProfile();
         outputProfileInfo();
@@ -64,23 +65,36 @@ public class ExtendKalangCompiler extends KalangCompiler {
             }
 
             @Override
-            public Object visitErrorousMemberExpr(KalangParser.ErrorousMemberExprContext emec) {
-                visit(emec.expression());
-                return super.visitErrorousMemberExpr(emec);
+            public ExprNode visitMethodRefExpr(KalangParser.MethodRefExprContext ctx) {
+                //visit for method reference completion
+                visit(ctx.expression());
+                return super.visitMethodRefExpr(ctx);
             }
-
-            @Override
-            public Object visitErrorousStat(KalangParser.ErrorousStatContext esc) {
-                super.visitErrorousStat(esc);
-                Object ast = visit(esc.expression());
-                if (ast instanceof AstNode) {
-                    return new ExprStmt(new ErrorousExpr((AstNode) ast));
-                } else {
-                    return null;
-                }
-            }
-
         };
+    }
+
+    @Nullable
+    @Override
+    protected CompilationUnitController loadCompilationUnitController(String className) {
+        CompilationUnitController cuc = super.loadCompilationUnitController(className);
+        if (cuc == null || validCompilationUnits.contains(className)) {
+            return cuc;
+        }
+        KalangSource src = getSourceLoader().loadSource(className);
+        if (src == null) {
+            //source is deleted
+            removeCompilationUnitController(className);
+            return null;
+        }
+        KalangSource compiledSrc = cuc.getCompilationUnit().getSource();
+        if (!Objects.equals(compiledSrc.getText(), src.getText())) {
+            //source is changed
+            removeCompilationUnitController(className);
+            validCompilationUnits.add(className);
+            return super.loadCompilationUnitController(className);
+        }
+        validCompilationUnits.add(className);
+        return cuc;
     }
 
     @Override

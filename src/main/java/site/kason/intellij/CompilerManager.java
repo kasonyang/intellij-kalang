@@ -10,7 +10,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import kalang.compiler.compile.CompilationUnit;
 import kalang.compiler.compile.Configuration;
 import kalang.compiler.compile.KalangSource;
-import kalang.compiler.compile.jvm.JvmAstLoader;
+import kalang.compiler.compile.jvm.JvmClassNodeLoader;
 import kalang.compiler.tool.FileSystemSourceLoader;
 import kalang.mixin.CollectionMixin;
 import org.apache.commons.lang3.tuple.Pair;
@@ -32,7 +32,7 @@ public class CompilerManager {
 
     private final static CacheHolder<String, Pair<KalangSource, CompilationUnit>> COMPILATION_UNIT_CACHE_HOLDER = new CacheHolder<>(100);
 
-    private final static Map<Project, Pair<String, JvmAstLoader>> astLoaderMap = new WeakHashMap<>();
+    private final static Map<Project, Pair<String, ExtendKalangCompiler>> cachedCompilers = new WeakHashMap<>();
 
     public static ExtendKalangCompiler create(Project project, VirtualFile virtualFile) {
         Module module = ModuleUtil.findModuleForFile(virtualFile, project);
@@ -44,19 +44,19 @@ public class CompilerManager {
         });
         VirtualFile[] srcRoots = ModuleRootManager.getInstance(module).getSourceRoots();
         File[] srcDirs = CollectionMixin.map(srcRoots, File.class, VfsUtil::virtualToIoFile);
-        Pair<String, JvmAstLoader> astLoaderPair = astLoaderMap.get(project);
+        Pair<String, ExtendKalangCompiler> compilerPair = cachedCompilers.get(project);
         String libUrlsStr = libUrls.toString();
-        if (astLoaderPair == null || !Objects.equals(astLoaderPair.getLeft(), libUrlsStr)) {
+        if (compilerPair == null || !Objects.equals(compilerPair.getLeft(), libUrlsStr)) {
             URLClassLoader urlClassLoader = new URLClassLoader(string2url(libUrls).toArray(new URL[0]));
-            JvmAstLoader astLoader = new JvmAstLoader(null, urlClassLoader);
-            astLoaderPair = Pair.of(libUrlsStr, astLoader);
-            astLoaderMap.put(project, astLoaderPair);
+            JvmClassNodeLoader classNodeLoader = new JvmClassNodeLoader(null, urlClassLoader);
+            Configuration config = new Configuration();
+            config.setClassNodeLoader(classNodeLoader);
+            ExtendKalangCompiler compiler = new ExtendKalangCompiler(config, COMPILATION_UNIT_CACHE_HOLDER);
+            compiler.setSourceLoader(new FileSystemSourceLoader(srcDirs, EXTENSIONS, "utf8"));
+            compilerPair = Pair.of(libUrlsStr, compiler);
+            cachedCompilers.put(project, compilerPair);
         }
-        Configuration config = new Configuration();
-        config.setAstLoader(astLoaderPair.getRight());
-        ExtendKalangCompiler compiler = new ExtendKalangCompiler(config, COMPILATION_UNIT_CACHE_HOLDER);
-        compiler.setSourceLoader(new FileSystemSourceLoader(srcDirs, EXTENSIONS, "utf8"));
-        return compiler;
+        return compilerPair.getRight();
     }
 
     private static List<URL> string2url(List<String> path) {

@@ -1,11 +1,11 @@
 package site.kason.kalang.sdk.compiler.util;
 
 import kalang.compiler.compile.CompilationUnit;
-import kalang.compiler.util.TokenNavigator;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import site.kason.kalang.sdk.compiler.ParseTreeNavigator;
+import site.kason.kalang.sdk.compiler.TokenNavigator;
 
 /**
  * @author KasonYang

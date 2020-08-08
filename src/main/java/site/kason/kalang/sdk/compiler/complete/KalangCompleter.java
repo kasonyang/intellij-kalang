@@ -10,13 +10,11 @@ import kalang.compiler.compile.CompilationUnit;
 import kalang.compiler.compile.StandardCompilePhases;
 import kalang.compiler.core.*;
 import kalang.compiler.util.AstUtil;
-import kalang.compiler.util.LexerFactory;
 import kalang.compiler.util.ModifierUtil;
-import kalang.compiler.util.TokenNavigator;
-import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 import site.kason.kalang.sdk.compiler.ExtendKalangCompiler;
 import site.kason.kalang.sdk.compiler.ParseTreeNavigator;
+import site.kason.kalang.sdk.compiler.TokenNavigator;
 import site.kason.kalang.sdk.compiler.util.NavigatorUtil;
 
 import javax.annotation.Nullable;
@@ -34,48 +32,40 @@ public class KalangCompleter {
     }
 
     public List<Completion> complete(String className, String source, boolean script, int caret) {
-        KalangLexer lexer = LexerFactory.createLexer(source);
-        CommonTokenStream inputStream = new CommonTokenStream(lexer);
-        while (inputStream.LA(1) != -1) {
-            inputStream.consume();
-        }
-        TokenNavigator tokenNav = new TokenNavigator(inputStream.getTokens());
+        CompilationUnit cu = compile(className, source, script);
+        TokenNavigator tokenNav = NavigatorUtil.createTokenNavigator(cu);
         try {
-            tokenNav.move(caret - 1);
+            tokenNav.moveCaret(caret - 1);
         } catch (IndexOutOfBoundsException ex) {
             return Collections.emptyList();
         }
-        Token currentToken = tokenNav.getCurrentToken();
-        if (!tokenNav.hasPrevious()) {
-            return Collections.emptyList();
-        }
-        tokenNav.previous(0);
-        Token prevToken = tokenNav.getCurrentToken();
-        if (isDotToken(currentToken)) {
-            CompilationUnit cu = compile(className, source, script, currentToken.getStartIndex(), currentToken.getStopIndex());
-            return completeMember(cu, prevToken.getStopIndex(), caret);
-        } else if (isIdentifier(currentToken) && isDotToken(prevToken)) {
-            if (!tokenNav.hasPrevious()) {
+        int channel = 0;
+        Token currentToken = tokenNav.currentToken();
+        if (isIdentifier(currentToken)) {
+            if (!tokenNav.hasPrevious(channel)) {
                 return Collections.emptyList();
             }
-            tokenNav.previous(0);
-            Token prevPrevToken = tokenNav.getCurrentToken();
-            CompilationUnit cu = compile(className, source, script, -1, -1);
-            return completeMember(cu, prevPrevToken.getStopIndex(), currentToken.getStartIndex());
+            tokenNav.back(1, channel);
+            currentToken = tokenNav.currentToken();
+        }
+        if (!tokenNav.hasPrevious(channel)) {
+            return Collections.emptyList();
+        }
+        Token prevToken = tokenNav.lookBack(1, channel);
+        if (prevToken == null) {
+            return Collections.emptyList();
+        }
+        if (isDotToken(currentToken)) {
+            return completeMember(cu, prevToken.getStopIndex(), caret);
         } else if (isDotDotToken(currentToken)) {
-            CompilationUnit cu = compile(className, source, script, currentToken.getStartIndex(), currentToken.getStopIndex());
             return completeMixinMethod(cu, prevToken.getStopIndex(), caret);
         } else if (isDoubleColon(currentToken)) {
-            CompilationUnit cu = compile(className, source, script, currentToken.getStartIndex(), currentToken.getStopIndex());
             return completeMethodRef(cu, prevToken.getStopIndex(), caret);
         }
         return Collections.emptyList();
     }
 
-    private CompilationUnit compile(String className, String source,  boolean script, int deleteBegin, int deleteStop) {
-        if (deleteBegin >= 0 && deleteStop >= 0) {
-            source = source.substring(0, deleteBegin) + " " + source.substring(deleteStop + 1);
-        }
+    private CompilationUnit compile(String className, String source,  boolean script) {
         compiler.setCompileTargetPhase(StandardCompilePhases.PARSE_BODY);
         compiler.setDiagnosisHandler(dh -> {});
         try {
