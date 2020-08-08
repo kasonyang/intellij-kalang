@@ -32,31 +32,56 @@ public class CompilerManager {
 
     private final static CacheHolder<String, Pair<KalangSource, CompilationUnit>> COMPILATION_UNIT_CACHE_HOLDER = new CacheHolder<>(100);
 
-    private final static Map<Project, Pair<String, ExtendKalangCompiler>> cachedCompilers = new WeakHashMap<>();
+    private final static Map<Module, Pair<String, ExtendKalangCompiler>> cachedCompilers = new WeakHashMap<>();
 
     public static ExtendKalangCompiler create(Project project, VirtualFile virtualFile) {
-        Module module = ModuleUtil.findModuleForFile(virtualFile, project);
-        Objects.requireNonNull(module);
+        Module moduleOfFile = ModuleUtil.findModuleForFile(virtualFile, project);
+        Objects.requireNonNull(moduleOfFile);
+        Set<Module> modules = getModulesWithDeps(moduleOfFile);
         List<String> libUrls = new LinkedList<>();
-        ModuleRootManager.getInstance(module).orderEntries().forEachLibrary(lib -> {
-            libUrls.addAll(Arrays.asList(lib.getUrls(OrderRootType.CLASSES)));
-            return true;
-        });
-        VirtualFile[] srcRoots = ModuleRootManager.getInstance(module).getSourceRoots();
-        File[] srcDirs = CollectionMixin.map(srcRoots, File.class, VfsUtil::virtualToIoFile);
-        Pair<String, ExtendKalangCompiler> compilerPair = cachedCompilers.get(project);
+        List<File> srcDirs = new LinkedList<>();
+        for (Module m : modules) {
+            ModuleRootManager.getInstance(m).orderEntries().forEachLibrary(lib -> {
+                libUrls.addAll(Arrays.asList(lib.getUrls(OrderRootType.CLASSES)));
+                return true;
+            });
+            VirtualFile[] srcRoots = ModuleRootManager.getInstance(m).getSourceRoots();
+            for (VirtualFile srcDir : srcRoots) {
+                srcDirs.add(VfsUtil.virtualToIoFile(srcDir));
+            }
+        }
+        Pair<String, ExtendKalangCompiler> compilerPair = cachedCompilers.get(moduleOfFile);
         String libUrlsStr = libUrls.toString();
+        if (compilerPair == null) {
+            System.out.println("compiler cache not found for module:" + moduleOfFile);
+        }
         if (compilerPair == null || !Objects.equals(compilerPair.getLeft(), libUrlsStr)) {
             URLClassLoader urlClassLoader = new URLClassLoader(string2url(libUrls).toArray(new URL[0]));
             JvmClassNodeLoader classNodeLoader = new JvmClassNodeLoader(null, urlClassLoader);
             Configuration config = new Configuration();
             config.setClassNodeLoader(classNodeLoader);
             ExtendKalangCompiler compiler = new ExtendKalangCompiler(config, COMPILATION_UNIT_CACHE_HOLDER);
-            compiler.setSourceLoader(new FileSystemSourceLoader(srcDirs, EXTENSIONS, "utf8"));
+            compiler.setSourceLoader(
+                    new FileSystemSourceLoader(srcDirs.toArray(new File[0]), EXTENSIONS, "utf8")
+            );
             compilerPair = Pair.of(libUrlsStr, compiler);
-            cachedCompilers.put(project, compilerPair);
+            cachedCompilers.put(moduleOfFile, compilerPair);
         }
         return compilerPair.getRight();
+    }
+
+    private static Set<Module> getModulesWithDeps(Module module) {
+        Set<Module> modules = new HashSet<>();
+        collectModuleWithDeps(module, modules);
+        return modules;
+    }
+
+    private static void collectModuleWithDeps(Module module, Set<Module> moduleHolder) {
+        boolean added = moduleHolder.add(module);
+        if (added) {
+            Module[] dependencies = ModuleRootManager.getInstance(module).getDependencies();
+            moduleHolder.addAll(Arrays.asList(dependencies));
+        }
     }
 
     private static List<URL> string2url(List<String> path) {
