@@ -3,15 +3,19 @@ package site.kason.kalang.sdk.compiler;
 import kalang.compiler.antlr.KalangParser;
 import kalang.compiler.ast.AstNode;
 import kalang.compiler.ast.ExprNode;
+import kalang.compiler.ast.LocalVarNode;
+import kalang.compiler.ast.Statement;
 import kalang.compiler.compile.*;
 import kalang.compiler.compile.codegen.Ast2JavaStub;
 import kalang.compiler.compile.semantic.AstBuilder;
+import kalang.compiler.core.VarTable;
 import kalang.compiler.profile.Profiler;
 import kalang.compiler.profile.Span;
 import kalang.compiler.profile.SpanFormatter;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.lang3.tuple.Pair;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.PrintStream;
 import java.util.*;
@@ -21,13 +25,13 @@ import java.util.*;
  */
 public class ExtendKalangCompiler extends KalangCompiler {
 
-    public Map<ParseTree, AstNode> parseTreeAstNodeMap = new HashMap<>();
-
     private final CacheHolder<String, Pair<KalangSource,CompilationUnit>> compilationCacheHolder;
 
     private final Set<String> validCompilationUnits = new HashSet<>();
 
     private boolean enableProfileOutput = false;
+
+    public CompletionInfo completionInfo = new CompletionInfo();
 
     public ExtendKalangCompiler(
             Configuration configuration,
@@ -44,6 +48,7 @@ public class ExtendKalangCompiler extends KalangCompiler {
     public void forceCompile(String className, String source, String fileName, boolean script) {
         compilationCacheHolder.remove(className);
         validCompilationUnits.clear();
+        completionInfo = new CompletionInfo();
         Profiler.getInstance().startProfile();
         addSource(className, source, fileName, script);
         compile();
@@ -59,7 +64,7 @@ public class ExtendKalangCompiler extends KalangCompiler {
             public Object visit(ParseTree tree) {
                 Object result = super.visit(tree);
                 if (result instanceof AstNode) {
-                    parseTreeAstNodeMap.put(tree, (AstNode)result);
+                    completionInfo.tree2astMap.put(tree, (AstNode)result);
                 }
                 return result;
             }
@@ -70,6 +75,33 @@ public class ExtendKalangCompiler extends KalangCompiler {
                 visit(ctx.expression());
                 return super.visitMethodRefExpr(ctx);
             }
+
+            @Nonnull
+            @Override
+            public Statement visitStat(KalangParser.StatContext ctx) {
+                completionInfo.stat2thisTypeMap.put(ctx, getThisType());
+                Map<String, LocalVarNode> varsMap = new HashMap<>();
+                collectVars(varsMap, methodCtx.varTables);
+                completionInfo.stat2VarsMap.put(ctx, varsMap.values());
+                completionInfo.stat2methodMap.put(ctx, methodCtx.method);
+                return super.visitStat(ctx);
+            }
+
+            private void collectVars(Map<String, LocalVarNode> result, VarTable<String, LocalVarNode> varTable) {
+                Collection<LocalVarNode> vars = varTable.values();
+                for (LocalVarNode v : vars) {
+                    String name = v.getName();
+                    if (result.containsKey(name)) {
+                        continue;
+                    }
+                    result.put(name, v);
+                }
+                VarTable<String, LocalVarNode> parent = varTable.getParent();
+                if (parent != null) {
+                    collectVars(result, parent);
+                }
+            }
+
         };
     }
 

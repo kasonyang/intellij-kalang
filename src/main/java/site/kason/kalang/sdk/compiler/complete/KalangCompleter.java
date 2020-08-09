@@ -1,17 +1,19 @@
 package site.kason.kalang.sdk.compiler.complete;
 
 import kalang.compiler.antlr.KalangLexer;
+import kalang.compiler.antlr.KalangParser;
 import kalang.compiler.antlr.KalangParser.ExpressionContext;
-import kalang.compiler.ast.AstNode;
-import kalang.compiler.ast.ClassNode;
-import kalang.compiler.ast.ClassReference;
-import kalang.compiler.ast.ExprNode;
+import kalang.compiler.ast.*;
 import kalang.compiler.compile.CompilationUnit;
+import kalang.compiler.compile.OffsetRange;
 import kalang.compiler.compile.StandardCompilePhases;
 import kalang.compiler.core.*;
 import kalang.compiler.util.AstUtil;
 import kalang.compiler.util.ModifierUtil;
+import kalang.compiler.util.OffsetRangeHelper;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.ParseTree;
 import site.kason.kalang.sdk.compiler.ExtendKalangCompiler;
 import site.kason.kalang.sdk.compiler.ParseTreeNavigator;
 import site.kason.kalang.sdk.compiler.TokenNavigator;
@@ -32,37 +34,39 @@ public class KalangCompleter {
     }
 
     public List<Completion> complete(String className, String source, boolean script, int caret) {
+        List<Completion> result = new LinkedList<>();
         CompilationUnit cu = compile(className, source, script);
         TokenNavigator tokenNav = NavigatorUtil.createTokenNavigator(cu);
         try {
             tokenNav.moveCaret(caret - 1);
         } catch (IndexOutOfBoundsException ex) {
-            return Collections.emptyList();
+            return result;
         }
         int channel = 0;
         Token currentToken = tokenNav.currentToken();
+        completeVarsAndThisMembers(result, cu, currentToken, caret);
         if (isIdentifier(currentToken)) {
             if (!tokenNav.hasPrevious(channel)) {
-                return Collections.emptyList();
+                return result;
             }
             tokenNav.back(1, channel);
             currentToken = tokenNav.currentToken();
         }
         if (!tokenNav.hasPrevious(channel)) {
-            return Collections.emptyList();
+            return result;
         }
         Token prevToken = tokenNav.lookBack(1, channel);
         if (prevToken == null) {
-            return Collections.emptyList();
+            return result;
         }
         if (isDotToken(currentToken)) {
-            return completeMember(cu, prevToken.getStopIndex(), caret);
+            result.addAll(completeMember(cu, prevToken.getStopIndex(), caret));
         } else if (isDotDotToken(currentToken)) {
-            return completeMixinMethod(cu, prevToken.getStopIndex(), caret);
+            result.addAll(completeMixinMethod(cu, prevToken.getStopIndex(), caret));
         } else if (isDoubleColon(currentToken)) {
-            return completeMethodRef(cu, prevToken.getStopIndex(), caret);
+            result.addAll(completeMethodRef(cu, prevToken.getStopIndex(), caret));
         }
-        return Collections.emptyList();
+        return result;
     }
 
     private CompilationUnit compile(String className, String source,  boolean script) {
@@ -76,11 +80,43 @@ public class KalangCompleter {
         return compiler.getCompilationUnit(className);
     }
 
+    private void completeVarsAndThisMembers(List<Completion> result, CompilationUnit cu, Token currentToken, int anchorOffset) {
+        if (!isIdentifier(currentToken)) {
+            return;
+        }
+        ParseTreeNavigator parseTreeNav = NavigatorUtil.createParseTreeNavigator(cu);
+        ParseTree parent = parseTreeNav.move(
+                currentToken.getStartIndex(),
+                p -> p instanceof KalangParser.StatContext || p instanceof ExpressionContext
+        );
+        if (!isFirstToken(parent, currentToken)) {
+            return;
+        }
+        KalangParser.StatContext stat = parseTreeNav.move(currentToken.getStartIndex(), KalangParser.StatContext.class);
+        ObjectType thisType = compiler.completionInfo.stat2thisTypeMap.get(stat);
+        if (thisType != null) {
+            result.addAll(completeMembersForType(cu, thisType, anchorOffset, null));
+        }
+        Collection<LocalVarNode> vars = compiler.completionInfo.stat2VarsMap.get(stat);
+        if (vars != null) {
+            for (LocalVarNode v : vars) {
+                result.add(new VarCompletion(v, anchorOffset));
+            }
+        }
+        MethodNode method = compiler.completionInfo.stat2methodMap.get(stat);
+        if (method != null) {
+            ParameterNode[] params = method.getParameters();
+            for (ParameterNode p : params) {
+                result.add(new VarCompletion(p, anchorOffset));
+            }
+        }
+    }
+
 
     private List<Completion> completeMember(CompilationUnit compilationUnit, int exprOffset, int anchorOffset) {
         ParseTreeNavigator parseTreeNav = NavigatorUtil.createParseTreeNavigator(compilationUnit);
         ExpressionContext prevCtx = parseTreeNav.move(exprOffset, ExpressionContext.class);
-        AstNode node = compiler.parseTreeAstNodeMap.get(prevCtx);
+        AstNode node = compiler.completionInfo.tree2astMap.get(prevCtx);
         if (node instanceof ExprNode) {
             Type targetType = ((ExprNode) node).getType();
             if (!(targetType instanceof ObjectType)) {
@@ -100,7 +136,7 @@ public class KalangCompleter {
     private List<Completion> completeMethodRef(CompilationUnit compilationUnit, int exprOffset, int anchorOffset) {
         ParseTreeNavigator parseTreeNav = NavigatorUtil.createParseTreeNavigator(compilationUnit);
         ExpressionContext prevCtx = parseTreeNav.move(exprOffset, ExpressionContext.class);
-        AstNode node = compiler.parseTreeAstNodeMap.get(prevCtx);
+        AstNode node = compiler.completionInfo.tree2astMap.get(prevCtx);
         if (node instanceof ExprNode) {
             Type targetType = ((ExprNode) node).getType();
             if (!(targetType instanceof ObjectType)) {
@@ -156,7 +192,7 @@ public class KalangCompleter {
     private List<Completion> completeMixinMethod(CompilationUnit compilationUnit, int exprOffset, int anchorOffset) {
         ParseTreeNavigator parseTreeNav = NavigatorUtil.createParseTreeNavigator(compilationUnit);
         ExpressionContext prevCtx = parseTreeNav.move(exprOffset, ExpressionContext.class);
-        AstNode node = compiler.parseTreeAstNodeMap.get(prevCtx);
+        AstNode node = compiler.completionInfo.tree2astMap.get(prevCtx);
         if (node instanceof ExprNode) {
             Type targetType = ((ExprNode) node).getType();
             return completeMixinMethodForType(compilationUnit, targetType, anchorOffset);
@@ -199,6 +235,15 @@ public class KalangCompleter {
             }
         }
         return methods;
+    }
+
+    private boolean isFirstToken(@Nullable ParseTree parseTree, Token token) {
+        if (!(parseTree instanceof ParserRuleContext)) {
+            return false;
+        }
+        ParserRuleContext ctx = (ParserRuleContext) parseTree;
+        OffsetRange offset = OffsetRangeHelper.getOffsetRange(ctx);
+        return offset.startOffset == token.getStartIndex();
     }
 
     private boolean isDotToken(Token token) {

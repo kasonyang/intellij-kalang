@@ -8,21 +8,21 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.patterns.StandardPatterns;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.ProcessingContext;
+import kalang.compiler.antlr.KalangLexer;
+import kalang.compiler.ast.VarObject;
 import kalang.compiler.core.FieldDescriptor;
 import kalang.compiler.core.MethodDescriptor;
 import kalang.compiler.core.ParameterDescriptor;
-import kalang.compiler.core.Type;
-import kalang.compiler.util.NameUtil;
+import org.antlr.intellij.adaptor.lexer.TokenIElementType;
 import org.jetbrains.annotations.NotNull;
 import site.kason.intellij.CompilerManager;
+import site.kason.intellij.KalangTokenTypes;
 import site.kason.intellij.util.IdeaClassNameUtil;
 import site.kason.kalang.sdk.compiler.ExtendKalangCompiler;
-import site.kason.kalang.sdk.compiler.complete.Completion;
-import site.kason.kalang.sdk.compiler.complete.FieldCompletion;
-import site.kason.kalang.sdk.compiler.complete.KalangCompleter;
-import site.kason.kalang.sdk.compiler.complete.MethodCompletion;
+import site.kason.kalang.sdk.compiler.complete.*;
 
 import java.util.List;
 
@@ -37,7 +37,15 @@ public class KalangCompletionContributor extends CompletionContributor {
             METHOD_INSERT_HANDLER = new SuffixInsertHandler<>("(", ")");
 
     public KalangCompletionContributor() {
-        extend(CompletionType.BASIC, psiElement().afterLeaf(".","..","::"), new BasicCompletionProvider());
+        TokenIElementType idToken = KalangTokenTypes.TOKEN_ELEMENT_TYPES.get(KalangLexer.Identifier);
+        extend(
+                CompletionType.BASIC,
+                StandardPatterns.or(
+                        psiElement(idToken),
+                        psiElement().afterLeaf(".","..","::")
+                ),
+                new BasicCompletionProvider()
+        );
         extend(CompletionType.BASIC, psiElement().afterLeaf("new"), new ClassNameCompletionProvider(
                 new SuffixInsertHandler<>("(", ")")
         ));
@@ -86,7 +94,7 @@ public class KalangCompletionContributor extends CompletionContributor {
                 if (it instanceof MethodCompletion) {
                     MethodDescriptor method = ((MethodCompletion) it).getMethod();
                     LookupElementBuilder ele = LookupElementBuilder.create(method, method.getName())
-                            .withTypeText(typeName(method.getReturnType()))
+                            .withTypeText(method.getReturnType().getName(true))
                             .withTailText(formatMethodParams(method))
                             .withInsertHandler(METHOD_INSERT_HANDLER)
                             ;
@@ -94,7 +102,12 @@ public class KalangCompletionContributor extends CompletionContributor {
                 } else if (it instanceof FieldCompletion) {
                     FieldDescriptor field = ((FieldCompletion) it).getField();
                     LookupElementBuilder ele = LookupElementBuilder.create(field.getName())
-                            .withTypeText(typeName(field.getType()));
+                            .withTypeText(field.getType().getName(true));
+                    resultSet.addElement(ele);
+                } else if (it instanceof VarCompletion) {
+                    VarObject varObj = ((VarCompletion) it).getVarObject();
+                    LookupElementBuilder ele = LookupElementBuilder.create(varObj.getName())
+                            .withTypeText(varObj.getType().getName(true));
                     resultSet.addElement(ele);
                 } else {
                     LookupElementBuilder ele = LookupElementBuilder.create(it.getCompleteString());
@@ -109,7 +122,7 @@ public class KalangCompletionContributor extends CompletionContributor {
             sb.append('(');
             if (params.length > 0) {
                 for (ParameterDescriptor p : params) {
-                    sb.append(typeName(p.getType()))
+                    sb.append(p.getType().getName(true))
                             .append(' ')
                             .append(p.getName())
                             .append(',');
@@ -118,10 +131,6 @@ public class KalangCompletionContributor extends CompletionContributor {
             }
             sb.append(')');
             return sb.toString();
-        }
-
-        private String typeName(Type type) {
-            return NameUtil.getSimpleClassName(type.getName());
         }
 
     }
