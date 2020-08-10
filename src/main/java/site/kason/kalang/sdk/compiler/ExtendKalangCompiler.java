@@ -14,6 +14,7 @@ import kalang.compiler.profile.Span;
 import kalang.compiler.profile.SpanFormatter;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.lang3.tuple.Pair;
+import site.kason.intellij.VirtualKalangSource;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -119,7 +120,7 @@ public class ExtendKalangCompiler extends KalangCompiler {
             return null;
         }
         KalangSource compiledSrc = cuc.getCompilationUnit().getSource();
-        if (!Objects.equals(compiledSrc.getText(), src.getText())) {
+        if (!isSameSource(compiledSrc, src)) {
             //source is changed
             removeCompilationUnitController(className);
             validCompilationUnits.add(className);
@@ -138,7 +139,7 @@ public class ExtendKalangCompiler extends KalangCompiler {
         }
         String key = source.getClassName();
         Pair<KalangSource, CompilationUnit> cache = compilationCacheHolder.get(key);
-        if (cache == null || !Objects.equals(source.getText(), cache.getKey().getText())) {
+        if (cache == null || !isSameSource(source, cache.getKey())) {
             CompilationUnit cu = super.newCompilationUnit(source);
             cache = Pair.of(source, cu);
             compilationCacheHolder.put(key, cache);
@@ -160,8 +161,21 @@ public class ExtendKalangCompiler extends KalangCompiler {
             PrintStream os = new PrintStream(System.err);
             new SpanFormatter().format(rootSpan,os);
         }
-        long time = rootSpan.getStopTime() - rootSpan.getStartTime();
+        long time = rootSpan.getElapsedNanoTime() / 1000_000;
         System.err.println("compiled in " + time + "ms");
+    }
+
+    private boolean isSameSource(KalangSource src1, KalangSource src2) {
+        if (src1 instanceof VirtualKalangSource && src2 instanceof VirtualKalangSource) {
+            long m1 = ((VirtualKalangSource) src1).getModificationStamp();
+            long m2 = ((VirtualKalangSource) src2).getModificationStamp();
+            return m1 == m2;
+        } else if (src1 instanceof FileKalangSource && src2 instanceof FileKalangSource) {
+            long m1 = ((FileKalangSource) src1).getFile().lastModified();
+            long m2 = ((FileKalangSource) src2).getFile().lastModified();
+            return m1 == m2;
+        }
+        return false;
     }
 
 }

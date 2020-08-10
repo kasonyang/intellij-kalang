@@ -9,6 +9,7 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.patterns.StandardPatterns;
+import com.intellij.psi.PsiMethod;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.ProcessingContext;
 import kalang.compiler.antlr.KalangLexer;
@@ -16,6 +17,7 @@ import kalang.compiler.ast.VarObject;
 import kalang.compiler.core.FieldDescriptor;
 import kalang.compiler.core.MethodDescriptor;
 import kalang.compiler.core.ParameterDescriptor;
+import kalang.mixin.CollectionMixin;
 import org.antlr.intellij.adaptor.lexer.TokenIElementType;
 import org.jetbrains.annotations.NotNull;
 import site.kason.intellij.CompilerManager;
@@ -33,8 +35,7 @@ import static com.intellij.patterns.PlatformPatterns.psiElement;
  */
 public class KalangCompletionContributor extends CompletionContributor {
 
-    private final static InsertHandler<LookupElement>
-            METHOD_INSERT_HANDLER = new SuffixInsertHandler<>("(", ")");
+    private final static InsertHandler<LookupElement> METHOD_INSERT_HANDLER = new MethodInsertHandler();
 
     public KalangCompletionContributor() {
         TokenIElementType idToken = KalangTokenTypes.TOKEN_ELEMENT_TYPES.get(KalangLexer.Identifier);
@@ -46,9 +47,11 @@ public class KalangCompletionContributor extends CompletionContributor {
                 ),
                 new BasicCompletionProvider()
         );
-        extend(CompletionType.BASIC, psiElement().afterLeaf("new"), new ClassNameCompletionProvider(
-                new SuffixInsertHandler<>("(", ")")
-        ));
+        extend(
+                CompletionType.BASIC,
+                psiElement().afterLeaf("new"),
+                new ClassNameCompletionProvider(new ClassNameInsertHandler())
+        );
         extend(CompletionType.BASIC, psiElement().afterLeaf("import"), new ClassNameCompletionProvider(
                 new ImportClassInsertHandler()
         ));
@@ -150,24 +153,34 @@ public class KalangCompletionContributor extends CompletionContributor {
 
     }
 
-    private static class SuffixInsertHandler<T extends LookupElement> implements InsertHandler<T> {
-
-        private final String stringBeforeCaret;
-
-        private final String stringAfterCaret;
-
-        public SuffixInsertHandler(String stringBeforeCaret, String stringAfterCaret) {
-            this.stringBeforeCaret = stringBeforeCaret;
-            this.stringAfterCaret = stringAfterCaret;
-        }
+    private static class ClassNameInsertHandler implements InsertHandler<JavaPsiClassReferenceElement> {
 
         @Override
-        public void handleInsert(@NotNull InsertionContext context, @NotNull T item) {
+        public void handleInsert(@NotNull InsertionContext ctx, @NotNull JavaPsiClassReferenceElement item) {
+            @NotNull Editor editor = ctx.getEditor();
+            @NotNull Document doc = editor.getDocument();
+            @NotNull CaretModel cm = editor.getCaretModel();
+            PsiMethod[] constructors = item.getObject().getConstructors();
+            boolean hasParams = CollectionMixin.find(
+                    constructors,
+                    c -> !c.getParameterList().isEmpty()
+            ) != null;
+            doc.insertString(ctx.getTailOffset(),"()");
+            cm.moveCaretRelatively(hasParams ? 1 : 2, 0, false, false,true);
+        }
+    }
+
+    private static class MethodInsertHandler implements InsertHandler<LookupElement> {
+
+        @Override
+        public void handleInsert(@NotNull InsertionContext context, @NotNull LookupElement item) {
             @NotNull Editor editor = context.getEditor();
             @NotNull Document doc = editor.getDocument();
             @NotNull CaretModel cm = editor.getCaretModel();
-            doc.insertString(context.getTailOffset(),stringBeforeCaret + stringAfterCaret);
-            cm.moveCaretRelatively(stringBeforeCaret.length(), 0, false, false,true);
+            MethodDescriptor md = (MethodDescriptor) item.getObject();
+            int paramsCount = md.getParameterDescriptors().length;
+            doc.insertString(context.getTailOffset(),"()");
+            cm.moveCaretRelatively(paramsCount > 0 ? 1 : 2, 0, false, false,true);
         }
 
     }

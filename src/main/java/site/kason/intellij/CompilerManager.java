@@ -5,14 +5,13 @@ import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderRootType;
-import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import kalang.compiler.compile.CompilationUnit;
 import kalang.compiler.compile.Configuration;
 import kalang.compiler.compile.KalangSource;
 import kalang.compiler.compile.jvm.JvmClassNodeLoader;
-import kalang.compiler.tool.FileSystemSourceLoader;
-import kalang.mixin.CollectionMixin;
+import kalang.compiler.tool.CachedClassNodeLoader;
+import kalang.compiler.tool.CachedSourceLoader;
 import org.apache.commons.lang3.tuple.Pair;
 import site.kason.kalang.sdk.compiler.CacheHolder;
 import site.kason.kalang.sdk.compiler.ExtendKalangCompiler;
@@ -28,8 +27,6 @@ import java.util.*;
  */
 public class CompilerManager {
 
-    private final static String[] EXTENSIONS = new String[] {"kl","kalang"};
-
     private final static CacheHolder<String, Pair<KalangSource, CompilationUnit>> COMPILATION_UNIT_CACHE_HOLDER = new CacheHolder<>(100);
 
     private final static Map<Module, Pair<String, ExtendKalangCompiler>> cachedCompilers = new WeakHashMap<>();
@@ -39,16 +36,14 @@ public class CompilerManager {
         Objects.requireNonNull(moduleOfFile);
         Set<Module> modules = getModulesWithDeps(moduleOfFile);
         List<String> libUrls = new LinkedList<>();
-        List<File> srcDirs = new LinkedList<>();
+        List<VirtualFile> srcDirs = new LinkedList<>();
         for (Module m : modules) {
             ModuleRootManager.getInstance(m).orderEntries().forEachLibrary(lib -> {
                 libUrls.addAll(Arrays.asList(lib.getUrls(OrderRootType.CLASSES)));
                 return true;
             });
             VirtualFile[] srcRoots = ModuleRootManager.getInstance(m).getSourceRoots();
-            for (VirtualFile srcDir : srcRoots) {
-                srcDirs.add(VfsUtil.virtualToIoFile(srcDir));
-            }
+            srcDirs.addAll(Arrays.asList(srcRoots));
         }
         Pair<String, ExtendKalangCompiler> compilerPair = cachedCompilers.get(moduleOfFile);
         String libUrlsStr = libUrls.toString();
@@ -59,10 +54,12 @@ public class CompilerManager {
             URLClassLoader urlClassLoader = new URLClassLoader(string2url(libUrls).toArray(new URL[0]));
             JvmClassNodeLoader classNodeLoader = new JvmClassNodeLoader(null, urlClassLoader);
             Configuration config = new Configuration();
-            config.setClassNodeLoader(classNodeLoader);
+            config.setClassNodeLoader(new CachedClassNodeLoader(classNodeLoader));
             ExtendKalangCompiler compiler = new ExtendKalangCompiler(config, COMPILATION_UNIT_CACHE_HOLDER);
             compiler.setSourceLoader(
-                    new FileSystemSourceLoader(srcDirs.toArray(new File[0]), EXTENSIONS, "utf8")
+                new CachedSourceLoader(
+                    new VFSourceLoader(srcDirs, KalangSource.EXTENSION_STANDARD)
+                )
             );
             compilerPair = Pair.of(libUrlsStr, compiler);
             cachedCompilers.put(moduleOfFile, compilerPair);
