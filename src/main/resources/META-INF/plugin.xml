@@ -15,20 +15,20 @@
     -->
 
     <extensions defaultExtensionNs="com.intellij">
-        <fileTypeFactory implementation="site.kason.intellij.KalangFileTypeFactory" />
-        <lang.syntaxHighlighterFactory language="Kalang" implementationClass="site.kason.intellij.highlighter.KalangSyntaxHighlighterFactory" />
-        <completion.contributor language="Kalang" implementationClass="site.kason.intellij.completion.KalangCompletionContributor" />
-        <externalAnnotator language="Kalang" implementationClass="site.kason.intellij.KalangExternalAnnotator"/>
-        <lang.braceMatcher language="Kalang" implementationClass="site.kason.intellij.editor.KalangBraceMatcher"/>
-        <lang.foldingBuilder language="Kalang" implementationClass="site.kason.intellij.KalangFoldingBuilder"/>
-        <lang.parserDefinition language="Kalang" implementationClass="site.kason.intellij.KalangShellParserDefinition"/>
-        <lang.parserDefinition language="Kalang" implementationClass="site.kason.intellij.KalangStandardParserDefinition"/>
+        <fileTypeFactory implementation="site.kason.kalang.intellij.KalangFileTypeFactory" />
+        <lang.syntaxHighlighterFactory language="Kalang" implementationClass="site.kason.kalang.intellij.highlighter.KalangSyntaxHighlighterFactory" />
+        <completion.contributor language="Kalang" implementationClass="site.kason.kalang.intellij.completion.KalangCompletionContributor" />
+        <externalAnnotator language="Kalang" implementationClass="site.kason.kalang.intellij.KalangExternalAnnotator"/>
+        <lang.braceMatcher language="Kalang" implementationClass="site.kason.kalang.intellij.editor.KalangBraceMatcher"/>
+        <lang.foldingBuilder language="Kalang" implementationClass="site.kason.kalang.intellij.KalangFoldingBuilder"/>
+        <lang.parserDefinition language="Kalang" implementationClass="site.kason.kalang.intellij.KalangShellParserDefinition"/>
+        <lang.parserDefinition language="Kalang" implementationClass="site.kason.kalang.intellij.KalangStandardParserDefinition"/>
     </extensions>
 
     <actions>
         <!-- Add your actions here -->
-        <action id="site.kason.intellij.action.SyncKalangOptionsAction"
-                class="site.kason.intellij.action.SyncKalangOptionsAction" text="Sync Kalang Options"
+        <action id="site.kason.kalang.intellij.action.SyncKalangOptionsAction"
+                class="site.kason.kalang.intellij.action.SyncKalangOptionsAction" text="Sync Kalang Options"
                 description="sync kalang options">
             <add-to-group group-id="ToolsMenu" anchor="first"/>
         </action>

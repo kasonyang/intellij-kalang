@@ -14,7 +14,7 @@ import kalang.compiler.profile.Span;
 import kalang.compiler.profile.SpanFormatter;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.lang3.tuple.Pair;
-import site.kason.intellij.VirtualKalangSource;
+import site.kason.kalang.intellij.VirtualKalangSource;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
