@@ -12,6 +12,6 @@ public class KalangFileTypeFactory extends FileTypeFactory {
     public void createFileTypes(@NotNull FileTypeConsumer consumer) {
         consumer.consume(KalangFileType.INSTANCE);
         consumer.consume(KalangFileType.INSTANCE_KALANG);
-        consumer.consume(KalangShellFileType.INSTANCE);
+        consumer.consume(KalangScriptFileType.INSTANCE);
     }
 }

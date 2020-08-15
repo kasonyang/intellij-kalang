@@ -8,15 +8,15 @@ import org.jetbrains.annotations.NotNull;
 /**
  * @author KasonYang
  */
-public class KalangShellFile extends PsiFileBase {
+public class KalangScriptFile extends PsiFileBase {
 
-    public KalangShellFile(@NotNull FileViewProvider viewProvider) {
+    public KalangScriptFile(@NotNull FileViewProvider viewProvider) {
         super(viewProvider, KalangLanguage.INSTANCE);
     }
 
     @Override
     public @NotNull FileType getFileType() {
-        return KalangShellFileType.INSTANCE;
+        return KalangScriptFileType.INSTANCE;
     }
     
 }

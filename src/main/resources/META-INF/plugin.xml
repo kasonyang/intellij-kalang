@@ -21,7 +21,7 @@
         <externalAnnotator language="Kalang" implementationClass="site.kason.kalang.intellij.KalangExternalAnnotator"/>
         <lang.braceMatcher language="Kalang" implementationClass="site.kason.kalang.intellij.editor.KalangBraceMatcher"/>
         <lang.foldingBuilder language="Kalang" implementationClass="site.kason.kalang.intellij.KalangFoldingBuilder"/>
-        <lang.parserDefinition language="Kalang" implementationClass="site.kason.kalang.intellij.KalangShellParserDefinition"/>
+        <lang.parserDefinition language="Kalang" implementationClass="site.kason.kalang.intellij.KalangScriptParserDefinition"/>
         <lang.parserDefinition language="Kalang" implementationClass="site.kason.kalang.intellij.KalangStandardParserDefinition"/>
         <lang.commenter language="Kalang" implementationClass="site.kason.kalang.intellij.KalangCommenter"/>
     </extensions>

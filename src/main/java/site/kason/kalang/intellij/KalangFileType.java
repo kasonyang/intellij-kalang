@@ -1,5 +1,6 @@
 package site.kason.kalang.intellij;
 
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.fileTypes.LanguageFileType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,6 +40,6 @@ public class KalangFileType extends LanguageFileType {
 
     @Override
     public @Nullable Icon getIcon() {
-        return KalangIcons.FILE;
+        return AllIcons.Nodes.Class;
     }
 }

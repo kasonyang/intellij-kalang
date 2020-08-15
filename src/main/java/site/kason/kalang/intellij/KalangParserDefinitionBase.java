@@ -110,7 +110,7 @@ public abstract class KalangParserDefinitionBase implements ParserDefinition {
 
     @Override
     public PsiFile createFile(FileViewProvider viewProvider) {
-        return script ? new KalangShellFile(viewProvider) : new KalangFile(viewProvider);
+        return script ? new KalangScriptFile(viewProvider) : new KalangFile(viewProvider);
     }
 
 }

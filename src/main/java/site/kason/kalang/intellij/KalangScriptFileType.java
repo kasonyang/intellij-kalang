@@ -1,5 +1,6 @@
 package site.kason.kalang.intellij;
 
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.fileTypes.LanguageFileType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -9,22 +10,22 @@ import javax.swing.*;
 /**
  * @author KasonYang
  */
-public class KalangShellFileType extends LanguageFileType {
+public class KalangScriptFileType extends LanguageFileType {
 
-    public static final KalangShellFileType INSTANCE = new KalangShellFileType();
+    public static final KalangScriptFileType INSTANCE = new KalangScriptFileType();
 
-    public KalangShellFileType() {
+    public KalangScriptFileType() {
         super(KalangLanguage.INSTANCE);
     }
 
     @Override
     public @NotNull String getName() {
-        return "Kalang shell File";
+        return "Kalang script File";
     }
 
     @Override
     public @NotNull String getDescription() {
-        return "Kalang shell file";
+        return "Kalang script file";
     }
 
     @Override
@@ -34,6 +35,6 @@ public class KalangShellFileType extends LanguageFileType {
 
     @Override
     public @Nullable Icon getIcon() {
-        return KalangIcons.FILE;
+        return AllIcons.Nodes.Console;
     }
 }
