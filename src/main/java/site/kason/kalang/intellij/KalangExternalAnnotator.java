@@ -9,6 +9,7 @@ import com.intellij.psi.PsiFile;
 import kalang.compiler.compile.Diagnosis;
 import kalang.compiler.compile.OffsetRange;
 import kalang.compiler.compile.StandardCompilePhases;
+import kalang.compiler.util.KalangSourceUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import site.kason.kalang.intellij.util.IdeaClassNameUtil;
@@ -44,7 +45,20 @@ public class KalangExternalAnnotator extends ExternalAnnotator<PsiFile, List<Dia
             }
         });
         compiler.setCompileTargetPhase(StandardCompilePhases.ANALYZE_SEMANTIC);
-        compiler.forceCompile(className, text, vFile.getPath());
+        boolean script = KalangSourceUtil.isScriptFile(vFile.getName());
+        try {
+            compiler.forceCompile(className, text, vFile.getPath(), script);
+        } catch (Exception ex) {
+            diagnosisList.add(
+                new Diagnosis(
+                    compiler,
+                    Diagnosis.Kind.ERROR,
+                    OffsetRange.NONE,
+                    "compile failed",
+                        new VirtualKalangSource(className, script, vFile)
+                )
+            );
+        }
         return diagnosisList;
     }
 

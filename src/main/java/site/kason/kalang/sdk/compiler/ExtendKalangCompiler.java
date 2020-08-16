@@ -113,18 +113,20 @@ public class ExtendKalangCompiler extends KalangCompiler {
         if (cuc == null || validCompilationUnits.contains(className)) {
             return cuc;
         }
-        KalangSource src = getSourceLoader().loadSource(className);
-        if (src == null) {
-            //source is deleted
-            removeCompilationUnitController(className);
-            return null;
-        }
         KalangSource compiledSrc = cuc.getCompilationUnit().getSource();
-        if (!isSameSource(compiledSrc, src)) {
-            //source is changed
-            removeCompilationUnitController(className);
-            validCompilationUnits.add(className);
-            return super.loadCompilationUnitController(className);
+        if (!compiledSrc.isScript()) {
+            KalangSource src = getSourceLoader().loadSource(className);
+            if (src == null) {
+                //source is deleted
+                removeCompilationUnitController(className);
+                return null;
+            }
+            if (!isSameSource(compiledSrc, src)) {
+                //source is changed
+                removeCompilationUnitController(className);
+                validCompilationUnits.add(className);
+                return super.loadCompilationUnitController(className);
+            }
         }
         validCompilationUnits.add(className);
         return cuc;

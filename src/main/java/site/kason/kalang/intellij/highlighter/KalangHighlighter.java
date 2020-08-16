@@ -123,6 +123,7 @@ public class KalangHighlighter extends SyntaxHighlighterBase {
             case KalangLexer.VOID:
             case KalangLexer.VOLATILE:
             case KalangLexer.WHILE:
+            case KalangLexer.MIXIN:
                 return KEYWORD;
             case KalangLexer.StringLiteral:
             case KalangLexer.MultiLineStringLiteral:
