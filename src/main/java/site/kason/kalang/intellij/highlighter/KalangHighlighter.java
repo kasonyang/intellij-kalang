@@ -131,6 +131,8 @@ public class KalangHighlighter extends SyntaxHighlighterBase {
             case KalangLexer.INTERPOLATION_INTERUPT:
             case KalangLexer.INTERPOLATION_END:
             case KalangLexer.INTERPOLATION_STRING:
+            case KalangLexer.UNTERMINATED_STRING:
+            case KalangLexer.UNTERMINATED_MULTILINE_STRING:
                 return STRING;
             case KalangLexer.COMMENT:
             case KalangLexer.LINE_COMMENT:
