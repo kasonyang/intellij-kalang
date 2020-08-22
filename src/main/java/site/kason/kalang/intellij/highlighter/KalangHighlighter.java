@@ -136,6 +136,7 @@ public class KalangHighlighter extends SyntaxHighlighterBase {
                 return STRING;
             case KalangLexer.COMMENT:
             case KalangLexer.LINE_COMMENT:
+            case KalangLexer.UNCLOSED_COMMENT:
                 return LINE_COMMENT;
             case KalangLexer.IntegerLiteral:
             case KalangLexer.FloatingPointLiteral:
