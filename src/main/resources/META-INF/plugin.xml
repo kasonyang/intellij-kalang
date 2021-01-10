@@ -4,8 +4,29 @@
     <vendor email="me@kason.site" url="http://www.kason.site">Kason Yang</vendor>
 
     <description><![CDATA[
-        <p>Language support for kalang.</p>
-        <p>More information please visit: http://kalang.kason.site</p>
+        Add support for <a href="https://github.com/kasonyang/kalang">Kalang language</a>.
+        <br />
+        <b>Features</b>
+        <ul>
+        <li>Syntax highlighting</li>
+        <li>Error checking</li>
+        <li>Code completion</li>
+        </ul>
+
+        <b>Supported File Types</b>
+        <ul>
+        <li>.kl</li>
+        <li>.kalang</li>
+        <li>.kls</li>
+        </ul>
+
+        <b>Provided Menu</b>
+        <ul>
+            <li>
+                <b>Tools</b>-><b>Sync kalang options</b>
+                <br />Sync project's dependencies from <b>kalang.options</b> file.
+            </li>
+        </ul>
     ]]></description>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
@@ -35,5 +56,5 @@
         </action>
     </actions>
 
-    <depends>com.intellij.modules.java</depends>
+    <depends>com.intellij.java</depends>
 </idea-plugin>
