@@ -4,7 +4,7 @@
     <vendor email="me@kason.site" url="http://www.kason.site">Kason Yang</vendor>
 
     <description><![CDATA[
-        <p>Languange support for kalang.</p>
+        <p>Language support for kalang.</p>
         <p>More information please visit: http://kalang.kason.site</p>
     ]]></description>
 
@@ -30,7 +30,7 @@
         <!-- Add your actions here -->
         <action id="site.kason.kalang.intellij.action.SyncKalangOptionsAction"
                 class="site.kason.kalang.intellij.action.SyncKalangOptionsAction" text="Sync Kalang Options"
-                description="sync kalang options">
+                description="Sync kalang options">
             <add-to-group group-id="ToolsMenu" anchor="first"/>
         </action>
     </actions>
