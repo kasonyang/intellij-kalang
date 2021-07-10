@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'site.kason'
-version '1.0.0'
+version '1.1.0'
 
 sourceCompatibility = 1.8
 
@@ -14,7 +14,7 @@ repositories {
 
 dependencies {
     compile "org.antlr:antlr4-intellij-adaptor:0.1"
-    compile 'site.kason.kalang:kalang-compiler:1.10-SNAPSHOT'
+    compile 'site.kason.kalang:kalang-compiler:1.11.0'
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
 
@@ -23,5 +23,5 @@ intellij {
     plugins = ['com.intellij.java']
 }
 patchPluginXml {
-    changeNotes """"""
+    changeNotes """Updating kalang to v1.11.0"""
 }
