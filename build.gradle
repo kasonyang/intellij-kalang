@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'site.kason'
-version '1.1.0'
+version '1.1.1'
 
 sourceCompatibility = 1.8
 
@@ -23,5 +23,5 @@ intellij {
     plugins = ['com.intellij.java']
 }
 patchPluginXml {
-    changeNotes """Updating kalang to v1.11.0"""
+    changeNotes """Remove deprecated APIs and fix kalang options file name"""
 }
