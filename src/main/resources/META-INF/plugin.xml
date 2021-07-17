@@ -24,7 +24,7 @@
         <ul>
             <li>
                 <b>Tools</b>-><b>Sync kalang options</b>
-                <br />Sync project's dependencies from <b>kalang.options</b> file.
+                <br />Sync project's dependencies from <b>.kloptions</b> file.
             </li>
         </ul>
     ]]></description>

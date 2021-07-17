@@ -32,7 +32,7 @@ import java.util.Arrays;
 public class SyncKalangOptionsAction extends AnAction {
 
 
-    private final static String OPTIONS_FILE = "kalang.options";
+    private final static String LEGACY_OPTIONS_FILE = "kalang.options";
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
@@ -48,7 +48,7 @@ public class SyncKalangOptionsAction extends AnAction {
         VirtualFile[] roots = ProjectRootManager.getInstance(project).getContentRoots();
         System.out.println("project roots:" + Arrays.toString(roots));
         for (VirtualFile root : roots) {
-            VirtualFile optionsFile = root.findChild(OPTIONS_FILE);
+            VirtualFile optionsFile = root.findChild(KalangOption.DEFAULT_OPTION_FILE);
             if (optionsFile != null) {
                 ProgressManager.getInstance().run(new Task.Backgroundable(project, "Sync kalang options") {
                     @Override
