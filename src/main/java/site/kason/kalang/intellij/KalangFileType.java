@@ -12,15 +12,10 @@ import javax.swing.*;
  */
 public class KalangFileType extends LanguageFileType {
 
-    public static final KalangFileType INSTANCE = new KalangFileType("kl");
+    public static final KalangFileType INSTANCE = new KalangFileType();
 
-    public static final KalangFileType INSTANCE_KALANG = new KalangFileType("kalang");
-
-    private final String extension;
-
-    public KalangFileType(String extension) {
+    public KalangFileType() {
         super(KalangLanguage.INSTANCE);
-        this.extension = extension;
     }
 
     @Override
@@ -35,7 +30,7 @@ public class KalangFileType extends LanguageFileType {
 
     @Override
     public @NotNull String getDefaultExtension() {
-        return extension;
+        return "kl";
     }
 
     @Override

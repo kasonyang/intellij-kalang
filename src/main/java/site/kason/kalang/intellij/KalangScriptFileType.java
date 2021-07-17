@@ -20,12 +20,12 @@ public class KalangScriptFileType extends LanguageFileType {
 
     @Override
     public @NotNull String getName() {
-        return "Kalang script File";
+        return "Kalang Script File";
     }
 
     @Override
     public @NotNull String getDescription() {
-        return "Kalang script file";
+        return "Kalang Script file";
     }
 
     @Override

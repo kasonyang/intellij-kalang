@@ -37,9 +37,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <fileType name="Kalang File" implementationClass="site.kason.kalang.intellij.KalangFileType"
-                  fieldName="INSTANCE" language="Kalang" extensions="kl" />
-        <fileType name="Kalang File" implementationClass="site.kason.kalang.intellij.KalangFileType"
-                  fieldName="INSTANCE_KALANG" language="Kalang" extensions="kalang" />
+                  fieldName="INSTANCE" language="Kalang" extensions="kl;kalang" />
         <fileType name="Kalang Script File" implementationClass="site.kason.kalang.intellij.KalangScriptFileType"
                   fieldName="INSTANCE" language="Kalang" extensions="kls" />
         <lang.syntaxHighlighterFactory language="Kalang" implementationClass="site.kason.kalang.intellij.highlighter.KalangSyntaxHighlighterFactory" />
