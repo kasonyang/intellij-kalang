@@ -36,7 +36,12 @@
     -->
 
     <extensions defaultExtensionNs="com.intellij">
-        <fileTypeFactory implementation="site.kason.kalang.intellij.KalangFileTypeFactory" />
+        <fileType name="Kalang File" implementationClass="site.kason.kalang.intellij.KalangFileType"
+                  fieldName="INSTANCE" language="Kalang" extensions="kl" />
+        <fileType name="Kalang File" implementationClass="site.kason.kalang.intellij.KalangFileType"
+                  fieldName="INSTANCE_KALANG" language="Kalang" extensions="kalang" />
+        <fileType name="Kalang Script File" implementationClass="site.kason.kalang.intellij.KalangScriptFileType"
+                  fieldName="INSTANCE" language="Kalang" extensions="kls" />
         <lang.syntaxHighlighterFactory language="Kalang" implementationClass="site.kason.kalang.intellij.highlighter.KalangSyntaxHighlighterFactory" />
         <completion.contributor language="Kalang" implementationClass="site.kason.kalang.intellij.completion.KalangCompletionContributor" />
         <externalAnnotator language="Kalang" implementationClass="site.kason.kalang.intellij.KalangExternalAnnotator"/>
@@ -55,6 +60,6 @@
             <add-to-group group-id="ToolsMenu" anchor="first"/>
         </action>
     </actions>
-
+    <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.java</depends>
 </idea-plugin>

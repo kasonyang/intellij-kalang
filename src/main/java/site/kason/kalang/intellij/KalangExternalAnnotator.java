@@ -2,6 +2,7 @@ package site.kason.kalang.intellij;
 
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.ExternalAnnotator;
+import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -74,14 +75,20 @@ public class KalangExternalAnnotator extends ExternalAnnotator<PsiFile, List<Dia
             }
             switch (kind) {
                 case NOTE:
-                    holder.createInfoAnnotation(textRange, msg);
+                    holder.newAnnotation(HighlightSeverity.INFORMATION, msg)
+                            .range(textRange)
+                            .create();
                     break;
                 case WARNING:
-                    holder.createWarningAnnotation(textRange, msg);
+                    holder.newAnnotation(HighlightSeverity.WARNING, msg)
+                            .range(textRange)
+                            .create();
                     break;
                 case ERROR:
                 case FATAL:
-                    holder.createErrorAnnotation(textRange, msg);
+                    holder.newAnnotation(HighlightSeverity.ERROR, msg)
+                            .range(textRange)
+                            .create();
                     break;
             }
         }
